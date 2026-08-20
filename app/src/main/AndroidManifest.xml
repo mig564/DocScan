@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+      NOTA SULLA PRIVACY
+      Non è dichiarato android.permission.INTERNET: senza quel permesso l'app è
+      tecnicamente incapace di trasmettere dati, ed è dimostrabile a un audit in
+      dieci secondi. Non reintrodurlo per Crashlytics o Analytics senza una
+      valutazione esplicita.
+
+      Non serve CAMERA: la fotocamera è usata dal modulo di scansione di Play
+      services nel suo processo, non nel nostro.
+
+      Non serve alcun permesso di storage: scriviamo in filesDir, e
+      l'esportazione passa da SAF, che concede l'accesso alla singola Uri scelta
+      dall'utente.
+    -->
+
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="true" />
+
+    <application
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="false"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:enableOnBackInvokedCallback="true"
+        android:theme="@style/Theme.DocScan"
+        tools:targetApi="33">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.DocScan"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <!--
+          Necessario per condividere il PDF: la copia decifrata vive in cache e
+          viene esposta come Uri temporanea. grantUriPermissions + exported=false
+          significa che l'accesso è concesso solo all'app scelta dall'utente,
+          per quella singola Uri, e revocato dopo.
+        -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+    </application>
+</manifest>

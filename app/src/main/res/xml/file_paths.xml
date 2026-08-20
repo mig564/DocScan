@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Solo la sottocartella "condivisi" della cache è esposta.
+  filesDir/archivio (i blob cifrati) NON è raggiungibile: non deve mai uscire.
+-->
+<paths>
+    <cache-path name="condivisi" path="condivisi/" />
+</paths>

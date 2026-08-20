@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  L'archivio non deve finire in un backup cloud né in un trasferimento
+  device-to-device: la chiave AES vive nel Keystore del dispositivo originale,
+  quindi i file sarebbero comunque illeggibili, ma escluderli evita di
+  trasferire dati personali inutilmente.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="file" path="archivio" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="file" path="archivio" />
+    </device-transfer>
+</data-extraction-rules>

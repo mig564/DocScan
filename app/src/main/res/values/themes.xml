@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Tema minimo: i colori reali li gestisce DocScanTheme in Compose.
+  Questo serve solo a togliere la action bar e a dare uno sfondo coerente
+  nell'istante fra l'avvio e il primo frame disegnato da Compose.
+-->
+<resources>
+    <style name="Theme.DocScan" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/surface</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>

@@ -1,0 +1,276 @@
+package it.example.docscan.ui.folder
+
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import it.example.docscan.data.DocumentRecord
+import it.example.docscan.data.Folder as DocFolder
+import it.example.docscan.ui.PaperThumb
+import it.example.docscan.ui.SortField
+import it.example.docscan.ui.theme.Green
+import it.example.docscan.ui.theme.GreenContainer
+import it.example.docscan.ui.theme.OnGreenContainer
+import it.example.docscan.ui.theme.OnSurface
+import it.example.docscan.ui.theme.OnSurfaceFaint
+import it.example.docscan.ui.theme.OnSurfaceSoft
+import it.example.docscan.ui.theme.OnSurfaceStrong
+import it.example.docscan.ui.theme.OnSurfaceVariant
+import it.example.docscan.ui.theme.Outline
+import it.example.docscan.ui.theme.OutlineFaint
+import it.example.docscan.ui.theme.OutlineSoft
+import it.example.docscan.ui.theme.Surface
+import it.example.docscan.ui.theme.SurfaceContainer
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+/**
+ * Contenuto di una cartella, una riga per documento. Nella libreria le carte
+ * sono in orizzontale perché conta il colpo d'occhio; qui conta scorrere e
+ * confrontare.
+ */
+@Composable
+fun FolderScreen(
+    folder: DocFolder,
+    documents: List<DocumentRecord>,
+    sortField: SortField,
+    sortAscending: Boolean,
+    onBack: () -> Unit,
+    onSortFieldChange: (SortField) -> Unit,
+    onToggleDirection: () -> Unit,
+    onOpenDocument: (DocumentRecord) -> Unit,
+    onDocumentActions: (DocumentRecord) -> Unit,
+) {
+    Column(Modifier.fillMaxSize().background(Surface)) {
+        TopBar(folder, documents.size, onBack)
+        SortBar(sortField, sortAscending, onSortFieldChange, onToggleDirection)
+
+        if (documents.isEmpty()) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        "Cartella vuota",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = OnSurfaceStrong,
+                    )
+                    Text(
+                        "Le scansioni salvate qui compariranno in questo elenco.",
+                        fontSize = 13.sp,
+                        color = OnSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
+            }
+        } else {
+            LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
+                items(documents.size, key = { documents[it].id }) { i ->
+                    DocumentRow(
+                        doc = documents[i],
+                        onClick = { onOpenDocument(documents[i]) },
+                        onLongClick = { onDocumentActions(documents[i]) },
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ------------------------------------------------------------------- Parti
+
+/** Barra con nome della cartella e numero di documenti. */
+@Composable
+private fun TopBar(folder: DocFolder, count: Int, onBack: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().height(60.dp).padding(start = 8.dp, end = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .clip(RoundedCornerShape(22.dp))
+                .clickable(onClick = onBack),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Indietro", Modifier.size(23.dp), OnSurfaceStrong)
+        }
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = folder.name,
+                fontSize = 17.sp,
+                fontWeight = FontWeight.Medium,
+                color = OnSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = if (count == 1) "1 documento" else "$count documenti",
+                fontSize = 12.sp,
+                color = OnSurfaceVariant,
+            )
+        }
+    }
+    Box(Modifier.fillMaxWidth().height(1.dp).background(OutlineSoft))
+}
+
+/** Criterio di ordinamento e verso. */
+@Composable
+private fun SortBar(
+    field: SortField,
+    ascending: Boolean,
+    onFieldChange: (SortField) -> Unit,
+    onToggleDirection: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        SortPill("Nome", field == SortField.NAME) { onFieldChange(SortField.NAME) }
+        SortPill("Ultima modifica", field == SortField.MODIFIED) { onFieldChange(SortField.MODIFIED) }
+
+        Spacer(Modifier.weight(1f))
+
+        // Una sola freccia che si inverte, non due pulsanti: lo stato attuale
+        // e l'azione successiva sono la stessa cosa, e occupa metà spazio.
+        Box(
+            modifier = Modifier
+                .size(34.dp)
+                .clip(RoundedCornerShape(9.dp))
+                .background(SurfaceContainer)
+                .clickable(onClick = onToggleDirection),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = if (ascending) Icons.Default.KeyboardArrowUp
+                else Icons.Default.KeyboardArrowDown,
+                contentDescription = if (ascending) "Ordine crescente, tocca per invertire"
+                else "Ordine decrescente, tocca per invertire",
+                modifier = Modifier.size(20.dp),
+                tint = OnSurfaceStrong,
+            )
+        }
+    }
+}
+
+/** Pillola selezionabile del criterio. */
+@Composable
+private fun SortPill(label: String, selected: Boolean, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .height(34.dp)
+            .clip(RoundedCornerShape(9.dp))
+            .then(
+                if (selected) Modifier.background(GreenContainer)
+                else Modifier.border(1.dp, Outline, RoundedCornerShape(9.dp)),
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = 13.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = label,
+            fontSize = 13.sp,
+            fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
+            color = if (selected) OnGreenContainer else OnSurfaceSoft,
+        )
+    }
+}
+
+/** Una riga: miniatura, titolo, data e menu. */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun DocumentRow(doc: DocumentRecord, onClick: () -> Unit, onLongClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        PaperThumb(doc.kind, Modifier.size(width = 40.dp, height = 52.dp))
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = doc.title,
+                fontSize = 14.5.sp,
+                fontWeight = FontWeight.Medium,
+                color = OnSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(doc.pageLabel, fontSize = 12.sp, color = OnSurfaceVariant)
+                Text(
+                    text = "  ·  ${fullDate(doc.createdAtEpochMs)}",
+                    fontSize = 12.sp,
+                    fontFamily = FontFamily.Monospace,
+                    color = OnSurfaceFaint,
+                )
+            }
+            if (doc.needsReviewCount > 0) {
+                Text(
+                    text = "${doc.needsReviewCount} campi da verificare",
+                    fontSize = 11.5.sp,
+                    color = Green,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+        }
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(RoundedCornerShape(18.dp))
+                .clickable(onClick = onLongClick),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Default.MoreVert, "Azioni", Modifier.size(19.dp), OnSurfaceVariant)
+        }
+    }
+    Box(
+        Modifier
+            .padding(start = 70.dp)
+            .fillMaxWidth()
+            .height(1.dp)
+            .background(OutlineFaint),
+    )
+}
+
+/** Data e ora, per distinguere scansioni dello stesso giorno. */
+private fun fullDate(epochMs: Long): String =
+    SimpleDateFormat("dd/MM/yy HH:mm", Locale.ITALY).format(Date(epochMs))

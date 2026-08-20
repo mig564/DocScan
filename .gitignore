@@ -1,0 +1,15 @@
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+/app/build
+/captures
+.externalNativeBuild
+.cxx
+
+# chiavi di firma: non devono mai finire nel repository
+*.jks
+*.keystore
+keystore.properties

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Glifo del documento scansionato, disegnato come vector: niente PNG da
+     generare, nessun asset binario nel repository. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M38,30h24l12,12v36a4,4 0 0,1 -4,4h-32a4,4 0 0,1 -4,-4v-44a4,4 0 0,1 4,-4z" />
+    <path
+        android:fillColor="#D8EADD"
+        android:pathData="M62,30l12,12h-12z" />
+    <path
+        android:fillColor="#2F7A57"
+        android:pathData="M42,52h20v3h-20zM42,60h20v3h-20zM42,68h13v3h-13z" />
+</vector>
