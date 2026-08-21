@@ -76,8 +76,8 @@ class DocumentRepository(private val context: Context) {
      * significa creare due posti indistinguibili dove cercare la stessa cosa.
      */
     suspend fun folderNameTaken(name: String, exceptId: String? = null): Boolean {
-        val target = name.trim().lowercase()
-        return folders().any { it.id != exceptId && it.name.trim().lowercase() == target }
+        val target = name.trim()
+        return folders().any { it.id != exceptId && it.name.trim().equals(target, ignoreCase = true) }
     }
 
     /** Null se il nome è vuoto o già in uso. */

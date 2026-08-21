@@ -299,7 +299,7 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
         return when {
             clean.isBlank() -> "Il nome non può essere vuoto"
             _state.value.folders.any {
-                it.id != exceptId && it.name.trim().lowercase() == clean.lowercase()
+                it.id != exceptId && it.name.trim().equals(clean, ignoreCase = true)
             } -> "Esiste già una cartella con questo nome"
             else -> null
         }

@@ -3,6 +3,11 @@
 Scanner di documenti per Android. Acquisisce documenti e tessere, ne estrae i
 dati con OCR e li conserva cifrati sul telefono. Non usa la rete.
 
+<p align="center">
+  <img src="docs/photo_1.jpg" width="260" alt="Libreria dei documenti">
+  <img src="docs/photo_2.jpg" width="260" alt="Scansione di una tessera">
+</p>
+
 ## Cosa fa
 
 - Scansione di documenti multipagina in PDF.
@@ -25,6 +30,8 @@ dati con OCR e li conserva cifrati sul telefono. Non usa la rete.
 
 ```
 DocScan/
+├── README.md
+├── docs/                               schermate usate qui sopra
 ├── build.gradle.kts                    versioni dei plugin
 ├── settings.gradle.kts
 ├── gradle.properties
@@ -110,12 +117,6 @@ un documento d'identità né un documento commerciale, non viene estratto nulla.
 **Dati di pagamento.** Ogni sequenza di 13-19 cifre passa per la verifica di
 Luhn. Se la supera è un numero di carta: non diventa un campo e viene mascherato
 nel testo salvato, lasciando le ultime quattro cifre.
-
-## Test
-
-24 test JUnit sulla logica di parsing e sulla geometria del foglio. I valori
-attesi non sono inventati: il codice fiscale `RSSMRA85T10A562S`, le cifre di
-controllo ICAO 9303 e le misure ISO/IEC 7810.
 
 ## Cosa manca
 

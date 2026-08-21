@@ -3,18 +3,17 @@
 -keepattributes *Annotation*, InnerClasses
 -dontnote kotlinx.serialization.**
 
--keepclassmembers class it.example.docscan.** {
+# Solo data/: è l'unico package con classi @Serializable. Una regola su tutto
+# it.example.docscan.** trattiene oltre cento classi senza motivo.
+-keepclassmembers class it.example.docscan.data.** {
     *** Companion;
 }
--keepclasseswithmembers class it.example.docscan.** {
+-keepclasseswithmembers class it.example.docscan.data.** {
     kotlinx.serialization.KSerializer serializer(...);
 }
--keep,includedescriptorclasses class it.example.docscan.**$$serializer { *; }
+-keep,includedescriptorclasses class it.example.docscan.data.**$$serializer { *; }
 
-# ML Kit carica alcune classi per riflessione. Si tengono solo i punti di
-# ingresso invece dell'intero package: una regola generica su com.google.mlkit.**
-# blocca oltre cento classi e vanifica buona parte della riduzione.
--keep class com.google.mlkit.vision.text.** { *; }
--keep class com.google.mlkit.vision.common.** { *; }
--keep class com.google.mlkit.vision.documentscanner.** { *; }
--keep class com.google.android.gms.internal.mlkit_vision_text_common.** { *; }
+# ML Kit e Play services portano le proprie regole ProGuard dentro l'AAR
+# (consumer-rules.pro), applicate in automatico. Ripeterle qui è ridondante e
+# una regola generica su com.google.mlkit.** trattiene oltre cento classi.
+# Se una build di release dovesse rompere l'OCR, il posto da guardare è questo.
