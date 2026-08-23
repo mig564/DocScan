@@ -1,142 +1,139 @@
 # DocScan
 
-Scanner di documenti per Android. Acquisisce documenti e tessere, ne estrae i
-dati con OCR e li conserva cifrati sul telefono. Non usa la rete.
+An Android document scanner. It scans documents and ID cards, pulls the data out
+with on-device OCR, and keeps everything encrypted on the phone. No network.
 
 <p align="center">
-  <img src="docs/photo_1.jpg" width="260" alt="Libreria dei documenti">
-  <img src="docs/photo_2.jpg" width="260" alt="Scansione di una tessera">
+  <img src="docs/photo_1.jpg" width="260" alt="Document library">
+  <img src="docs/photo_2.jpg" width="260" alt="Scanning a card">
 </p>
 
-## Cosa fa
+## What it does
 
-- Scansione di documenti multipagina in PDF.
-- Fronte e retro di carta d'identità, tessera sanitaria, patente o bancomat su
-  un unico foglio A4, in scala reale 1:1.
-- OCR sul dispositivo, con estrazione di codice fiscale, MRZ, IBAN, partita IVA,
-  totali e date.
-- Archivio cifrato AES-256-GCM, organizzato in cartelle.
-- Ricerca nel testo delle scansioni.
-- Esportazione e condivisione in PDF.
-- Tema chiaro, scuro o di sistema.
+- Multi-page document scanning to PDF.
+- Front and back of an ID card, health card, driving licence or bank card on a
+  single A4 sheet, printed at true 1:1 scale.
+- On-device OCR that extracts Italian tax codes, MRZ lines, IBANs, VAT numbers,
+  totals and dates.
+- AES-256-GCM encrypted archive, organised into folders.
+- Full-text search across scans.
+- PDF export and sharing.
+- Light, dark or system theme.
 
-## Requisiti
+## Requirements
 
-- Android 7.0 (API 24) o superiore.
-- Google Play Services: il modulo di acquisizione arriva da lì.
-- Un dispositivo fisico. Lo scanner non funziona sugli emulatori senza Play Store.
+- Android 7.0 (API 24) or later.
+- Google Play Services: the capture module comes from there.
+- A physical device. The scanner does not work on emulators without Play Store.
 
-## Struttura
+## Layout
 
 ```
 DocScan/
 ├── README.md
-├── docs/                               schermate usate qui sopra
-├── build.gradle.kts                    versioni dei plugin
+├── docs/                               screenshots used above
+├── build.gradle.kts                    plugin versions
 ├── settings.gradle.kts
 ├── gradle.properties
-├── gradlew  gradlew.bat                wrapper Gradle
+├── gradlew  gradlew.bat                Gradle wrapper
 ├── gradle/wrapper/
 └── app/
-    ├── build.gradle.kts                dipendenze del modulo
-    ├── proguard-rules.pro              regole per kotlinx.serialization e ML Kit
+    ├── build.gradle.kts                module dependencies
+    ├── proguard-rules.pro              kotlinx.serialization rules
     └── src/
         ├── main/
-        │   ├── AndroidManifest.xml     nessun permesso INTERNET, FileProvider
+        │   ├── AndroidManifest.xml     no INTERNET permission, FileProvider
         │   ├── java/it/example/docscan/
-        │   │   ├── MainActivity.kt         avvio, navigazione, intent di sistema
+        │   │   ├── MainActivity.kt         startup, navigation, system intents
         │   │   ├── data/
-        │   │   │   ├── SecureStore.kt          cifratura AES-GCM su chiave Keystore
-        │   │   │   ├── DocumentRepository.kt   archivio, cartelle, esportazione
-        │   │   │   ├── Model.kt                documenti, cartelle, campi estratti
-        │   │   │   ├── ScanMode.kt             modalità e formati carta ISO 7810
-        │   │   │   ├── A4Composer.kt           fronte e retro su A4 in scala reale
-        │   │   │   ├── PdfBuilder.kt           PDF multipagina
-        │   │   │   ├── AppSettings.kt          tema e cartella predefinita
-        │   │   │   └── Images.kt               decodifica ridotta delle immagini
+        │   │   │   ├── SecureStore.kt          AES-GCM on a Keystore key
+        │   │   │   ├── DocumentRepository.kt   archive, folders, export
+        │   │   │   ├── Model.kt                documents, folders, fields
+        │   │   │   ├── ScanMode.kt             modes and ISO 7810 card sizes
+        │   │   │   ├── A4Composer.kt           both sides on A4 at true scale
+        │   │   │   ├── PdfBuilder.kt           multi-page PDF
+        │   │   │   ├── AppSettings.kt          theme and default folder
+        │   │   │   └── Images.kt               downsampled image decoding
         │   │   ├── ocr/
-        │   │   │   ├── Ocr.kt                  ML Kit, riconoscimento sul dispositivo
-        │   │   │   ├── ItalianDocumentParser.kt codice fiscale e MRZ
-        │   │   │   └── FieldExtractor.kt       campi etichettati, verifiche, PAN mascherati
+        │   │   │   ├── Ocr.kt                  ML Kit, on-device recognition
+        │   │   │   ├── ItalianDocumentParser.kt tax code and MRZ
+        │   │   │   └── FieldExtractor.kt       labelled fields, checks, PAN masking
         │   │   └── ui/
-        │   │       ├── DocScanViewModel.kt     stato dell'app e operazioni
-        │   │       ├── BottomSheet.kt          pannello a scomparsa condiviso
-        │   │       ├── Components.kt           anteprime carta, chip filtro
-        │   │       ├── DocumentActionsSheet.kt menu a pressione lunga, dialogo nome
-        │   │       ├── FolderPickerSheet.kt    selettore di cartella
-        │   │       ├── library/LibraryScreen.kt   schermata principale
-        │   │       ├── folder/FolderScreen.kt     contenuto di una cartella
-        │   │       ├── review/ReviewScreen.kt     revisione dopo la scansione
-        │   │       ├── review/A4Preview.kt        anteprima del foglio A4
-        │   │       ├── detail/DetailScreen.kt     documento aperto
-        │   │       ├── scan/ScanModeSheet.kt      scelta della modalità
-        │   │       ├── settings/SettingsSheet.kt  impostazioni
+        │   │       ├── DocScanViewModel.kt     app state and operations
+        │   │       ├── BottomSheet.kt          shared bottom sheet
+        │   │       ├── Components.kt           card thumbnails, filter chips
+        │   │       ├── DocumentActionsSheet.kt long-press menu, name dialog
+        │   │       ├── FolderPickerSheet.kt    folder picker
+        │   │       ├── library/LibraryScreen.kt   main screen
+        │   │       ├── folder/FolderScreen.kt     folder contents
+        │   │       ├── review/ReviewScreen.kt     post-scan review
+        │   │       ├── review/A4Preview.kt        A4 sheet preview
+        │   │       ├── detail/DetailScreen.kt     open document
+        │   │       ├── scan/ScanModeSheet.kt      mode selection
+        │   │       ├── settings/SettingsSheet.kt  settings
         │   │       └── theme/                     Color.kt, Theme.kt
         │   └── res/
         │       ├── values/          strings.xml, colors.xml, themes.xml
         │       ├── values-night/    themes.xml
         │       ├── drawable/        ic_launcher_foreground.xml
-        │       ├── mipmap*/         icone vettoriali
+        │       ├── mipmap*/         launcher icons
         │       └── xml/             file_paths.xml, data_extraction_rules.xml
         └── test/java/it/example/docscan/
-            ├── data/A4ComposerTest.kt      geometria del foglio
-            ├── data/FolderNameTest.kt      unicità dei nomi cartella
-            └── ocr/ParserTest.kt           codice fiscale, MRZ, IBAN, PAN
+            ├── data/A4ComposerTest.kt      sheet geometry
+            ├── data/FolderNameTest.kt      folder name uniqueness
+            └── ocr/ParserTest.kt           tax code, MRZ, IBAN, PAN
 ```
 
-L'interfaccia è interamente in Jetpack Compose: non ci sono layout XML.
+The UI is entirely Jetpack Compose. There are no XML layouts.
 
-## Scelte tecniche
+Source comments are in Italian.
 
-**Nessun permesso INTERNET.** Il manifest non lo dichiara, quindi il processo
-dell'app è tecnicamente incapace di trasmettere dati, e la cosa si verifica
-aprendo il manifest. Il modello OCR è impacchettato nell'APK e funziona in
-modalità aereo.
+## Design notes
 
-L'acquisizione passa dal Document Scanner di ML Kit, che gira nel processo di
-Google Play Services. Google dichiara che le immagini restano sul dispositivo,
-ma riceve metriche d'uso delle API: chi distribuisce l'app deve dirlo agli
-utenti.
+**No INTERNET permission.** The manifest does not declare one, so the app
+process simply cannot send anything anywhere, and you can check that by opening
+the manifest. The OCR model ships inside the APK and works in airplane mode.
 
-**Cifratura.** Ogni file dell'archivio è cifrato AES-256-GCM con una chiave non
-esportabile custodita nell'Android Keystore. Le anteprime vengono decifrate
-direttamente in memoria: nessun file in chiaro tocca il disco, tranne la copia
-temporanea creata per condividere o esportare, cancellata al rientro nell'app.
+Capture goes through ML Kit's Document Scanner, which runs inside the Google Play
+Services process. Google states the images stay on the device, but it does
+receive API usage metrics — anyone shipping this app has to tell their users so.
 
-**Scala reale.** La composizione A4 parte dai millimetri e scrive il PDF in
-punti PostScript (1 mm = 72/25,4 pt). Una carta ID-1 stampata misura davvero
-85,6 × 54 mm. Un'immagine non ha unità fisiche e perderebbe la scala alla prima
-stampa.
+**Encryption.** Every file in the archive is AES-256-GCM encrypted with a
+non-exportable key held in the Android Keystore. Previews are decrypted straight
+into memory, so no plaintext file ever touches disk, except the temporary copy
+made for sharing or exporting, which is wiped when the app comes back to the
+foreground.
 
-**Estrazione dati.** L'OCR restituisce le righe della pagina, non un testo
-appiattito: su una fattura etichetta e valore stanno sulla stessa riga, ed è il
-segnale più affidabile disponibile. Codice fiscale, MRZ, IBAN e partita IVA
-vengono verificati con le rispettive cifre di controllo. Se una pagina non è né
-un documento d'identità né un documento commerciale, non viene estratto nulla.
+**True scale.** A4 composition starts in millimetres and writes the PDF in
+PostScript points (1 mm = 72/25.4 pt). Print the sheet and an ID-1 card measures
+85.6 × 54 mm on paper. An image has no physical unit, so its scale is lost the
+first time it goes through a printer.
 
-**Dati di pagamento.** Ogni sequenza di 13-19 cifre passa per la verifica di
-Luhn. Se la supera è un numero di carta: non diventa un campo e viene mascherato
-nel testo salvato, lasciando le ultime quattro cifre.
+**Field extraction.** OCR returns the lines of the page rather than one flat
+string: on an invoice the label and its value sit on the same line, and that is
+the most reliable signal there is. Tax codes, MRZ lines, IBANs and VAT numbers
+are validated against their own check digits. If a page is neither an identity
+document nor a commercial one, nothing is extracted at all.
 
-## Cosa manca
+**Payment data.** Every run of 13 to 19 digits goes through a Luhn check. If it
+passes, it is a card number: it never becomes a field, and it is masked in the
+stored text with only the last four digits left.
 
-In ordine di utilità.
+## Not there yet
 
-- **Evidenziazione sulla pagina.** ML Kit restituisce il rettangolo di ogni riga
-  riconosciuta. Conservandolo, toccando un campo si potrebbe vedere da dove è
-  stato letto, invece di doversi fidare di una percentuale.
-- **Blocco biometrico.** Oggi chi ha in mano il telefono sbloccato vede tutti i
-  documenti. Basterebbe `setUserAuthenticationRequired(true)` sulla chiave
-  Keystore, più il prompt.
-- **Retention.** L'archivio conserva i documenti per sempre. Servirebbe almeno
-  una scadenza per cartella e un avviso sui documenti più vecchi di N mesi.
-- **Selezione multipla.** Eliminare o spostare venti scansioni una per una è
-  scomodo.
-- **Password sul PDF condiviso.** Una copia inviata via messaggio resta in chiaro
-  nel telefono di chi la riceve.
-- **Preset passaporto da rivedere.** Assume due facciate come le tessere, ma la
-  pagina dati del passaporto è una sola: probabilmente serve un riquadro unico
-  più grande.
-- **Riordino delle cartelle con trascinamento.** Al momento ci sono i pulsanti
-  su e giù.
-- **Anteprime `@Preview`** per lavorare sulle schermate senza ricompilare.
+Roughly in order of usefulness.
+
+- **Highlighting on the page.** ML Kit returns the bounding box of every line it
+  recognises. Keeping those would let you tap a field and see where it was read
+  from, instead of trusting a percentage.
+- **Biometric lock.** Right now anyone holding the unlocked phone sees every
+  document. It would take `setUserAuthenticationRequired(true)` on the Keystore
+  key plus the prompt.
+- **Retention.** The archive keeps documents forever. It needs at least a
+  per-folder expiry and a warning on anything older than N months.
+- **Multi-select.** Deleting or moving twenty scans one at a time is tedious.
+- **Password on shared PDFs.** A copy sent over a messaging app stays in the
+  clear on the recipient's phone.
+- **The passport preset needs rethinking.** It assumes two sides like a card, but
+  a passport has a single data page — one larger slot is probably right.
+- **Drag to reorder folders.** There are up and down buttons for now.
