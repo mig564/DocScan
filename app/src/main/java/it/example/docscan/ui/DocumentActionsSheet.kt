@@ -10,13 +10,22 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DriveFileMove
 import androidx.compose.material.icons.filled.Delete
@@ -34,8 +43,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -131,12 +142,26 @@ fun NameDialog(
     // significa mostrare "nome vuoto" prima che l'utente abbia scritto nulla.
     var error by remember(initial) { mutableStateOf<String?>(null) }
 
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    val focus = LocalFocusManager.current
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            // safeDrawing tiene conto insieme di barre di sistema, ritaglio del
+            // display e tastiera. Sommare systemBarsPadding e imePadding contava
+            // due volte la barra di navigazione e il riquadro non saliva
+            // abbastanza.
+            .windowInsetsPadding(WindowInsets.safeDrawing),
+        contentAlignment = Alignment.Center,
+    ) {
         Box(
             Modifier
                 .fillMaxSize()
                 .background(Scrim)
-                .clickable(onClick = onDismiss),
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                ) { onDismiss() },
         )
         Column(
             modifier = Modifier
@@ -146,11 +171,15 @@ fun NameDialog(
                 .background(Surface)
                 // Consuma i tocchi: altrimenti un tap sulla scheda arriva allo
                 // scrim sottostante e chiude il dialogo.
+                // Toccare il riquadro fuori dal campo toglie il cursore
+                // lampeggiante e la tastiera, senza chiudere il dialogo.
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
-                    onClick = {},
-                )
+                ) { focus.clearFocus() }
+                // Su schermi bassi con la tastiera aperta il riquadro non ci
+                // starebbe: meglio scorrevole che tagliato.
+                .verticalScroll(rememberScrollState())
                 .padding(20.dp),
         ) {
             Text(title, fontSize = 17.sp, fontWeight = FontWeight.Medium, color = OnSurface)
@@ -169,6 +198,11 @@ fun NameDialog(
                     value = draft,
                     onValueChange = { draft = it; error = null },
                     singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = {
+                        val problem = validate(draft)
+                        if (problem != null) error = problem else onConfirm(draft)
+                    }),
                     textStyle = TextStyle(fontSize = 15.sp, color = OnSurface),
                     cursorBrush = SolidColor(Green),
                     modifier = Modifier.fillMaxWidth(),
@@ -178,10 +212,9 @@ fun NameDialog(
             // Spazio riservato: il dialogo non deve cambiare altezza quando
             // l'errore compare.
             Box(Modifier.fillMaxWidth().height(26.dp), contentAlignment = Alignment.CenterStart) {
-                error?.let {
-                    Text(it, fontSize = 12.sp, color = DangerText)
-                }
+                error?.let { Text(it, fontSize = 12.sp, color = DangerText) }
             }
+
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Box(
                     modifier = Modifier
@@ -218,7 +251,6 @@ fun NameDialog(
     }
 }
 
-/** Dialogo di rinomina di un documento. */
 @Composable
 fun RenameDialog(record: DocumentRecord, onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
     NameDialog(

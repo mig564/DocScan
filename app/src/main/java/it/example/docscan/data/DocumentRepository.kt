@@ -339,6 +339,33 @@ class DocumentRepository(private val context: Context) {
      * La copia in chiaro vive in cacheDir/condivisi e viene cancellata al
      * rientro nell'app. Una volta inviata a un'altra app non è più controllabile.
      */
+    /**
+     * PDF di una scansione non ancora salvata, pronto da condividere.
+     *
+     * Non tocca l'archivio: niente cifratura delle pagine, niente metadati. Chi
+     * condivide vuole mandare il documento, non necessariamente conservarlo, e
+     * salvarlo comunque significherebbe farlo aspettare per un lavoro che non ha
+     * chiesto.
+     */
+    suspend fun pdfForSharing(
+        pageUris: List<Uri>,
+        scanMode: ScanMode,
+        fitMode: FitMode,
+        fileName: String,
+    ): Uri? = withContext(Dispatchers.IO) {
+        val format = scanMode.format
+        val bytes = if (format != null) A4Composer.build(context, pageUris, format, fitMode)
+        else PdfBuilder.build(context, pageUris)
+        if (bytes == null) return@withContext null
+        runCatching {
+            val dir = File(context.cacheDir, SHARE_DIR).apply { mkdirs() }
+            val safe = fileName.replace(Regex("""[/\\:*?"<>|]"""), "_").ifBlank { "Scansione" }
+            val out = File(dir, "$safe.pdf")
+            out.writeBytes(bytes)
+            FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", out)
+        }.getOrNull()
+    }
+
     suspend fun pdfForSharing(record: DocumentRecord): Uri? = withContext(Dispatchers.IO) {
         val pdfName = record.pdfFile ?: return@withContext null
         runCatching {

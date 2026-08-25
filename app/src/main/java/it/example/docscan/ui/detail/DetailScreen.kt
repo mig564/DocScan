@@ -12,16 +12,23 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -50,9 +57,11 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -678,7 +687,10 @@ private fun AddFieldDialog(onConfirm: (String, String) -> Unit, onDismiss: () ->
     var label by remember { mutableStateOf("") }
     var value by remember { mutableStateOf("") }
 
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    Box(
+        modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing),
+        contentAlignment = Alignment.Center,
+    ) {
         Box(Modifier.fillMaxSize().background(Scrim).clickable(onClick = onDismiss))
         Column(
             modifier = Modifier
@@ -693,6 +705,7 @@ private fun AddFieldDialog(onConfirm: (String, String) -> Unit, onDismiss: () ->
                     indication = null,
                     onClick = {},
                 )
+                .verticalScroll(rememberScrollState())
                 .padding(20.dp),
         ) {
             Text("Nuovo campo", fontSize = 17.sp, fontWeight = FontWeight.Medium, color = OnSurface)
@@ -737,6 +750,7 @@ private fun AddFieldDialog(onConfirm: (String, String) -> Unit, onDismiss: () ->
 /** Campo di testo con segnaposto, usato nei dialoghi. */
 @Composable
 private fun DialogField(placeholder: String, value: String, onChange: (String) -> Unit) {
+    val keyboard = LocalSoftwareKeyboardController.current
     Box(
         Modifier
             .fillMaxWidth()
@@ -753,6 +767,8 @@ private fun DialogField(placeholder: String, value: String, onChange: (String) -
             value = value,
             onValueChange = onChange,
             singleLine = true,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { keyboard?.hide() }),
             textStyle = TextStyle(fontSize = 14.5.sp, color = OnSurface),
             cursorBrush = SolidColor(Green),
             modifier = Modifier.fillMaxWidth(),

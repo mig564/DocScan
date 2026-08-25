@@ -35,6 +35,9 @@ enum class SortField { NAME, MODIFIED }
 
 /** Id della cartella virtuale "Scansioni recenti": non esiste su disco. */
 const val FOLDER_RECENT = "__recenti"
+
+/** Mensola virtuale con gli esiti della ricerca. */
+const val FOLDER_SEARCH = "__risultati"
 private const val RECENT_WINDOW_MS = 7L * 24 * 60 * 60 * 1000
 
 /** Stato del foglio di salvataggio, che nel design ha tre fasi. */
@@ -194,19 +197,35 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
      */
     fun shelves(s: UiState): List<Pair<Folder, List<DocumentRecord>>> {
         val matching = repo.search(s.records, s.query)
+
+        // Durante la ricerca si mostra un solo elenco di esiti. Con le mensole
+        // normali lo stesso documento comparirebbe due volte, in "Scansioni
+        // recenti" e nella sua cartella, e tutte le cartelle senza risultati
+        // resterebbero visibili e vuote: sembrava che la ricerca non partisse.
+        if (s.query.isNotBlank()) {
+            val inScope = if (s.filter == FILTER_ALL) matching else {
+                val id = s.folders.firstOrNull { it.name == s.filter }?.id
+                matching.filter { it.folderId == id }
+            }
+            // Nessun esito: si restituisce una lista vuota, così compare il
+            // messaggio "Nessun risultato" invece di una mensola che invita a
+            // riempire una cartella che non esiste.
+            if (inScope.isEmpty()) return emptyList()
+            return listOf(Folder(FOLDER_SEARCH, "Risultati", -1) to inScope)
+        }
+
         val cutoff = System.currentTimeMillis() - RECENT_WINDOW_MS
         val recents = Folder(FOLDER_RECENT, "Scansioni recenti", -1) to
             matching.filter { it.createdAtEpochMs >= cutoff }
         val real = s.folders.map { folder ->
             folder to matching.filter { it.folderId == folder.id }
         }
-        val filtered = if (s.filter == FILTER_ALL) {
-            listOf(recents) + real
-        } else {
-            real.filter { it.first.name == s.filter }
-        }
-        // In modalità modifica mostriamo anche le cartelle vuote, altrimenti no.
-        return if (s.editing || s.query.isNotBlank()) filtered
+        val filtered = if (s.filter == FILTER_ALL) listOf(recents) + real
+        else real.filter { it.first.name == s.filter }
+
+        // In modalità modifica si vedono anche le cartelle vuote, per poterle
+        // riordinare o eliminare.
+        return if (s.editing) filtered
         else filtered.filter { it.second.isNotEmpty() || s.filter != FILTER_ALL }
     }
 
@@ -234,7 +253,9 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
         val matching = repo.search(s.records, s.query)
         // "Scansioni recenti" e' una vista, non una cartella: nessun documento
         // ha quel folderId, quindi filtrarci sopra darebbe sempre zero risultati.
-        val docs = if (folder.id == FOLDER_RECENT) {
+        val docs = if (folder.id == FOLDER_SEARCH) {
+            matching
+        } else if (folder.id == FOLDER_RECENT) {
             val cutoff = System.currentTimeMillis() - RECENT_WINDOW_MS
             matching.filter { it.createdAtEpochMs >= cutoff }
         } else {
@@ -824,41 +845,29 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
      * Condivide una scansione appena acquisita. Salva prima in archivio: se
      * l'utente annulla la condivisione, la scansione non deve andare persa.
      */
-    fun saveAndShare() {
+    /**
+     * Condivide la scansione senza salvarla in archivio.
+     *
+     * Prima salvava, cifrava e apriva il dettaglio: un'attesa per un lavoro che
+     * l'utente non aveva chiesto. Ora genera solo il PDF e resta in revisione,
+     * così dopo aver condiviso puoi comunque premere Salva se vuoi tenerlo.
+     */
+    fun shareScan() {
         val pending = _state.value.pending ?: return
         viewModelScope.launch {
-            _state.update { it.copy(exportStage = ExportStage.BUSY) }
-            try {
-                val unsorted = _state.value.folders
-                    .firstOrNull { it.id == DocumentRepository.FOLDER_UNSORTED }
-                    ?: _state.value.folders.first()
-                val record = repo.save(
-                    title = pending.fileName,
-                    folderId = unsorted.id,
-                    pageUris = pending.pageUris,
-                    fields = pending.fields,
-                    searchText = pending.searchText,
-                    kind = pending.kind,
-                    scanMode = pending.scanMode,
-                    fitMode = pending.fitMode,
+            _state.update { it.copy(busy = true) }
+            val uri = repo.pdfForSharing(
+                pageUris = pending.pageUris,
+                scanMode = pending.scanMode,
+                fitMode = pending.fitMode,
+                fileName = pending.fileName,
+            )
+            _state.update {
+                it.copy(
+                    busy = false,
+                    pendingShareUri = uri?.toString(),
+                    toast = if (uri == null) "Non è stato possibile preparare il PDF" else null,
                 )
-                val uri = repo.pdfForSharing(record)
-                val records = loadRecords()
-                _state.update {
-                    it.copy(
-                        exportStage = ExportStage.CLOSED,
-                        pending = null,
-                        openDoc = record,
-                        screen = Screen.DETAIL,
-                        records = records,
-                        pendingShareUri = uri?.toString(),
-                        toast = if (uri != null) "Salvato in ${unsorted.name} · pronto da condividere"
-                        else "Salvato in ${unsorted.name} · PDF non disponibile",
-                    )
-                }
-            } catch (e: Exception) {
-                _state.update { it.copy(exportStage = ExportStage.CLOSED) }
-                toast("Condivisione non riuscita: ${e.message}")
             }
         }
     }

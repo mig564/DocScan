@@ -203,7 +203,7 @@ class MainActivity : ComponentActivity() {
                             onShowFolders = vm::showFolderPicker,
                             onBackToDestinations = vm::backToDestinations,
                             onSaveToFolder = vm::saveToFolder,
-                            onShare = vm::saveAndShare,
+                            onShare = vm::shareScan,
                             onFitModeChange = vm::setFitMode,
                             captureLabel = if (state.scanMode.isTwoSided &&
                                 !vm.bothSidesCaptured(state)

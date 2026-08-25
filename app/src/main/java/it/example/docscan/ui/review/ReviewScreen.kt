@@ -52,6 +52,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -99,10 +100,15 @@ fun ReviewScreen(
     onFitModeChange: (FitMode) -> Unit,
     captureLabel: String?,
 ) {
+    val focus = LocalFocusManager.current
+
     Box(Modifier.fillMaxSize().background(SurfaceDim)) {
         Column(Modifier.fillMaxSize()) {
             TopBar(pending, busy, onBack)
 
+            // Area scorrevole: quando si apre la tastiera il contenuto scorre
+            // invece di comprimersi, così l'anteprima non si rimpicciolisce e
+            // Compose porta da solo in vista il campo che stai scrivendo.
             Box(
                 modifier = Modifier.weight(1f).fillMaxWidth(),
                 contentAlignment = Alignment.Center,
@@ -110,12 +116,9 @@ fun ReviewScreen(
                 val fmt = pending?.scanMode?.format
                 when {
                     pending == null -> Loading()
-                    // Il foglio A4 usa la stessa geometria del PDF: se cambia
-                    // una, cambiano entrambe.
+
                     fmt != null -> Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 44.dp, vertical = 10.dp),
+                        modifier = Modifier.padding(horizontal = 44.dp, vertical = 10.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         A4Preview(
@@ -152,6 +155,9 @@ fun ReviewScreen(
                     PageActions(pending, onRemovePage)
                 }
                 FileNameField(pending.fileName, onFileNameChange)
+            }
+
+            if (pending != null) {
                 BottomActions(
                     enabled = !busy,
                     onSave = onOpenExport,
@@ -441,7 +447,7 @@ private fun BottomActions(enabled: Boolean, onSave: () -> Unit, onShare: () -> U
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
-            .padding(top = 10.dp, bottom = 18.dp),
+            .padding(top = 8.dp, bottom = 14.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         // Condividi e' un'azione alla pari del salvataggio, non una

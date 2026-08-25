@@ -12,9 +12,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -23,14 +25,16 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.CreateNewFolder
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
@@ -43,15 +47,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import it.example.docscan.data.DocumentRecord
 import it.example.docscan.data.Folder as DocFolder
 import it.example.docscan.ui.FOLDER_RECENT
+import it.example.docscan.ui.FOLDER_SEARCH
 import it.example.docscan.ui.FilterPill
 import it.example.docscan.ui.PaperThumb
 import it.example.docscan.ui.UiState
@@ -100,11 +108,15 @@ fun LibraryScreen(
     onScan: () -> Unit,
 ) {
     val totalPages = state.records.sumOf { it.pageCount }
+    // Vero quando la tastiera occupa spazio: l'inset è l'unica fonte attendibile.
+    val imeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
 
     Box(Modifier.fillMaxSize().background(Surface)) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 108.dp),
+            contentPadding = PaddingValues(
+                bottom = if (!imeVisible && state.query.isBlank()) 108.dp else 24.dp,
+            ),
         ) {
             item {
                 Row(
@@ -163,7 +175,9 @@ fun LibraryScreen(
                     Shelf(
                         folder = folder,
                         docs = docs,
-                        editing = state.editing && folder.id != FOLDER_RECENT,
+                        editing = state.editing &&
+                            folder.id != FOLDER_RECENT &&
+                            folder.id != FOLDER_SEARCH,
                         onOpenDocument = onOpenDocument,
                         onDocumentActions = onDocumentActions,
                         onOpenFolder = { onOpenFolder(folder) },
@@ -180,7 +194,13 @@ fun LibraryScreen(
             }
         }
 
-        ScanBar(onScan, Modifier.align(Alignment.BottomCenter))
+        // Il pulsante sparisce quando la tastiera è aperta o c'è una ricerca in
+        // corso. La condizione guarda la tastiera e non il testo scritto: basta
+        // toccare la barra di ricerca perché il pulsante salga appiccicato alla
+        // tastiera, ed è quello che dava fastidio.
+        if (!imeVisible && state.query.isBlank()) {
+            ScanBar(onScan, Modifier.align(Alignment.BottomCenter))
+        }
     }
 }
 
@@ -286,6 +306,7 @@ private fun UnreadableBanner(count: Int, onPurge: () -> Unit) {
 /** Campo di ricerca nel testo delle scansioni. */
 @Composable
 private fun SearchField(query: String, onQueryChange: (String) -> Unit) {
+    val keyboard = LocalSoftwareKeyboardController.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -306,6 +327,10 @@ private fun SearchField(query: String, onQueryChange: (String) -> Unit) {
                 value = query,
                 onValueChange = onQueryChange,
                 singleLine = true,
+                // La ricerca filtra mentre si digita: il tasto serve solo a
+                // togliere di mezzo la tastiera e vedere i risultati.
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(onSearch = { keyboard?.hide() }),
                 textStyle = TextStyle(fontSize = 14.5.sp, color = OnSurface),
                 cursorBrush = SolidColor(Green),
                 modifier = Modifier.fillMaxWidth(),

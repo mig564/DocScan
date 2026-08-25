@@ -73,11 +73,12 @@ DocScan/
         │   │       ├── settings/SettingsSheet.kt  settings
         │   │       └── theme/                     Color.kt, Theme.kt
         │   └── res/
-        │       ├── values/          strings.xml, colors.xml, themes.xml
-        │       ├── values-night/    themes.xml
-        │       ├── drawable/        ic_launcher_foreground.xml
-        │       ├── mipmap*/         launcher icons
-        │       └── xml/             file_paths.xml, data_extraction_rules.xml
+        │       ├── values/              strings.xml, colors.xml, themes.xml
+        │       ├── values-night/        themes.xml
+        │       ├── drawable/            ic_launcher_foreground.xml
+        │       ├── mipmap-anydpi-v26/   adaptive icons, API 26+
+        │       ├── mipmap-*dpi/         PNG icons for API 24-25
+        │       └── xml/                 file_paths.xml, data_extraction_rules.xml
         └── test/java/it/example/docscan/
             ├── data/A4ComposerTest.kt      sheet geometry
             ├── data/FolderNameTest.kt      folder name uniqueness
@@ -102,7 +103,8 @@ receive API usage metrics — anyone shipping this app has to tell their users s
 non-exportable key held in the Android Keystore. Previews are decrypted straight
 into memory, so no plaintext file ever touches disk, except the temporary copy
 made for sharing or exporting, which is wiped when the app comes back to the
-foreground.
+foreground. There is no biometric lock on top of that yet, so anyone holding the
+unlocked phone can open the archive.
 
 **True scale.** A4 composition starts in millimetres and writes the PDF in
 PostScript points (1 mm = 72/25.4 pt). Print the sheet and an ID-1 card measures
@@ -118,22 +120,3 @@ document nor a commercial one, nothing is extracted at all.
 **Payment data.** Every run of 13 to 19 digits goes through a Luhn check. If it
 passes, it is a card number: it never becomes a field, and it is masked in the
 stored text with only the last four digits left.
-
-## Not there yet
-
-Roughly in order of usefulness.
-
-- **Highlighting on the page.** ML Kit returns the bounding box of every line it
-  recognises. Keeping those would let you tap a field and see where it was read
-  from, instead of trusting a percentage.
-- **Biometric lock.** Right now anyone holding the unlocked phone sees every
-  document. It would take `setUserAuthenticationRequired(true)` on the Keystore
-  key plus the prompt.
-- **Retention.** The archive keeps documents forever. It needs at least a
-  per-folder expiry and a warning on anything older than N months.
-- **Multi-select.** Deleting or moving twenty scans one at a time is tedious.
-- **Password on shared PDFs.** A copy sent over a messaging app stays in the
-  clear on the recipient's phone.
-- **The passport preset needs rethinking.** It assumes two sides like a card, but
-  a passport has a single data page — one larger slot is probably right.
-- **Drag to reorder folders.** There are up and down buttons for now.
