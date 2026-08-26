@@ -1,5 +1,13 @@
 package it.example.docscan.ui.library
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -28,8 +36,10 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CreateNewFolder
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -48,7 +58,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -56,6 +69,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import it.example.docscan.R
 import it.example.docscan.data.DocumentRecord
 import it.example.docscan.data.Folder as DocFolder
 import it.example.docscan.ui.FOLDER_RECENT
@@ -63,6 +77,8 @@ import it.example.docscan.ui.FOLDER_SEARCH
 import it.example.docscan.ui.FilterPill
 import it.example.docscan.ui.PaperThumb
 import it.example.docscan.ui.UiState
+import it.example.docscan.ui.folderName
+import it.example.docscan.ui.pageLabel
 import it.example.docscan.ui.theme.BottomBar
 import it.example.docscan.ui.theme.DangerContainer
 import it.example.docscan.ui.theme.DangerText
@@ -110,45 +126,72 @@ fun LibraryScreen(
     val totalPages = state.records.sumOf { it.pageCount }
     // Vero quando la tastiera occupa spazio: l'inset è l'unica fonte attendibile.
     val imeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    val focus = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
+
+    // Modalità ricerca: la barra prende il posto del titolo. Vale anche a
+    // campo vuoto, perché basta toccarlo per volerla usare.
+    val searching = imeVisible || state.query.isNotBlank()
+
+    fun exitSearch() {
+        onQueryChange("")
+        focus.clearFocus()      // via il cursore lampeggiante
+        keyboard?.hide()
+    }
 
     Box(Modifier.fillMaxSize().background(Surface)) {
+        Column(Modifier.fillMaxSize()) {
+        // L'intestazione si ritira invece di sparire di colpo: 180 ms sono
+        // abbastanza da leggere il movimento e troppo pochi da far aspettare.
+        // L'uscita è più rapida dell'entrata, così toccando la barra la
+        // reazione sembra immediata.
+        AnimatedVisibility(
+            visible = !searching,
+            enter = expandVertically(tween(180)) + fadeIn(tween(180)),
+            exit = shrinkVertically(tween(140)) + fadeOut(tween(90)),
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.library_title), fontSize = 26.sp, color = OnSurface)
+                    Text(
+                        text = stringResource(
+                            R.string.library_subtitle,
+                            pluralStringResource(R.plurals.scan_count, state.records.size, state.records.size),
+                            pluralStringResource(R.plurals.page_count, totalPages, totalPages),
+                        ),
+                        fontSize = 12.5.sp,
+                        color = OnSurfaceVariant,
+                    )
+                }
+                EditToggle(editing = state.editing, onClick = onToggleEditing)
+                Spacer(Modifier.width(6.dp))
+                // Ancorato al bordo: la pillola "Fine" si allarga verso
+                // sinistra e l'ingranaggio non si sposta mai.
+                SettingsButton(enabled = !state.editing, onClick = onOpenSettings)
+            }
+        }
+
+        if (state.unreadable.isNotEmpty()) {
+            UnreadableBanner(state.unreadable.size, onPurgeUnreadable)
+        }
+
+        SearchField(state.query, searching, onQueryChange, ::exitSearch)
+
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.weight(1f).fillMaxWidth(),
             contentPadding = PaddingValues(
                 bottom = if (!imeVisible && state.query.isBlank()) 108.dp else 24.dp,
             ),
         ) {
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(Modifier.weight(1f)) {
-                        Text("Documenti", fontSize = 26.sp, color = OnSurface)
-                        Text(
-                            text = "${state.records.size} scansioni · $totalPages pagine · solo su questo telefono",
-                            fontSize = 12.5.sp,
-                            color = OnSurfaceVariant,
-                        )
-                    }
-                    EditToggle(editing = state.editing, onClick = onToggleEditing)
-                    Spacer(Modifier.width(6.dp))
-                    // Ancorato al bordo: la pillola "Fine" si allarga verso
-                    // sinistra e l'ingranaggio non si sposta mai.
-                    SettingsButton(enabled = !state.editing, onClick = onOpenSettings)
-                }
-            }
-
-            if (state.unreadable.isNotEmpty()) {
-                item { UnreadableBanner(state.unreadable.size, onPurgeUnreadable) }
-            }
-
-            item { SearchField(state.query, onQueryChange) }
 
             item {
-                val labels = listOf(UiState.FILTER_ALL) + state.folders.map { it.name }
+                val chips = listOf(UiState.FILTER_ALL to stringResource(R.string.filter_all)) +
+                    state.folders.map { it.id to folderName(it) }
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -156,17 +199,20 @@ fun LibraryScreen(
                         .padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    labels.forEach { label ->
+                    chips.forEach { (id, label) ->
                         FilterPill(
                             label = label,
-                            selected = state.filter == label,
-                            onClick = { onFilterChange(label) },
+                            selected = state.filter == id,
+                            onClick = { onFilterChange(id) },
                         )
                     }
                 }
             }
 
-            if (shelves.all { it.second.isEmpty() } && !state.editing) {
+            // Il messaggio generale compare solo quando non c'è proprio nulla
+            // da mostrare. Se una mensola c'è, è lei a dire che è vuota, e lo
+            // fa meglio: porta il nome della cartella.
+            if (shelves.isEmpty() && !state.editing) {
                 item { EmptyState(state.query.isNotBlank()) }
             }
 
@@ -198,6 +244,8 @@ fun LibraryScreen(
         // corso. La condizione guarda la tastiera e non il testo scritto: basta
         // toccare la barra di ricerca perché il pulsante salga appiccicato alla
         // tastiera, ed è quello che dava fastidio.
+        }
+
         if (!imeVisible && state.query.isBlank()) {
             ScanBar(onScan, Modifier.align(Alignment.BottomCenter))
         }
@@ -219,7 +267,7 @@ private fun EditToggle(editing: Boolean, onClick: () -> Unit) {
                 .padding(horizontal = 14.dp),
             contentAlignment = Alignment.Center,
         ) {
-            Text("Fine", fontSize = 13.5.sp, fontWeight = FontWeight.Medium, color = Color.White)
+            Text(stringResource(R.string.done), fontSize = 13.5.sp, fontWeight = FontWeight.Medium, color = Color.White)
         }
     } else {
         Box(
@@ -230,7 +278,7 @@ private fun EditToggle(editing: Boolean, onClick: () -> Unit) {
                 .clickable(onClick = onClick),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(Icons.Default.Edit, "Gestisci cartelle", Modifier.size(20.dp), OnGreenContainer)
+            Icon(Icons.Default.Edit, stringResource(R.string.manage_folders), Modifier.size(20.dp), OnGreenContainer)
         }
     }
 }
@@ -248,7 +296,7 @@ private fun SettingsButton(enabled: Boolean, onClick: () -> Unit) {
     ) {
         Icon(
             imageVector = Icons.Default.Settings,
-            contentDescription = "Impostazioni",
+            contentDescription = stringResource(R.string.settings),
             modifier = Modifier.size(20.dp),
             tint = if (enabled) OnSurfaceStrong else OnSurfaceGhost,
         )
@@ -273,16 +321,17 @@ private fun UnreadableBanner(count: Int, onPurge: () -> Unit) {
             Icon(Icons.Default.Warning, null, Modifier.size(19.dp), WarnText)
             Spacer(Modifier.width(9.dp))
             Text(
-                text = if (count == 1) "1 documento non leggibile"
-                else "$count documenti non leggibili",
+                text = stringResource(
+                    R.string.unreadable_title,
+                    pluralStringResource(R.plurals.unreadable_count, count, count),
+                ),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 color = WarnText,
             )
         }
         Text(
-            text = "I file sono presenti ma non si riesce a decifrarli. Potrebbero essere " +
-                "recuperabili da un backup del telefono: rimuovili solo se sei sicuro.",
+            text = stringResource(R.string.unreadable_body),
             fontSize = 12.sp,
             lineHeight = 17.sp,
             color = WarnText,
@@ -298,43 +347,92 @@ private fun UnreadableBanner(count: Int, onPurge: () -> Unit) {
                 .padding(horizontal = 12.dp),
             contentAlignment = Alignment.Center,
         ) {
-            Text("Rimuovi i file danneggiati", fontSize = 12.5.sp, color = WarnText)
+            Text(stringResource(R.string.unreadable_action), fontSize = 12.5.sp, color = WarnText)
         }
     }
 }
 
 /** Campo di ricerca nel testo delle scansioni. */
 @Composable
-private fun SearchField(query: String, onQueryChange: (String) -> Unit) {
+private fun SearchField(
+    query: String,
+    searching: Boolean,
+    onQueryChange: (String) -> Unit,
+    onExit: () -> Unit,
+) {
     val keyboard = LocalSoftwareKeyboardController.current
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .height(46.dp)
-            .clip(RoundedCornerShape(23.dp))
-            .background(SurfaceContainer)
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = 16.dp)
+            .padding(top = if (searching) 10.dp else 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Icon(Icons.Default.Search, null, Modifier.size(20.dp), OnSurfaceVariant)
-        Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
-            if (query.isEmpty()) {
-                Text("Cerca scansione", fontSize = 14.5.sp, color = OnSurfaceVariant)
+        // In ricerca la freccia prende il posto del titolo: è il modo più
+        // diretto per uscire, e libera la fascia in alto per i risultati.
+        AnimatedVisibility(
+            visible = searching,
+            enter = expandHorizontally(tween(180)) + fadeIn(tween(220)),
+            exit = shrinkHorizontally(tween(140)) + fadeOut(tween(90)),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .clickable(onClick = onExit),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        stringResource(R.string.back),
+                        Modifier.size(22.dp),
+                        OnSurfaceStrong,
+                    )
+                }
+                Spacer(Modifier.width(4.dp))
             }
-            BasicTextField(
-                value = query,
-                onValueChange = onQueryChange,
-                singleLine = true,
-                // La ricerca filtra mentre si digita: il tasto serve solo a
-                // togliere di mezzo la tastiera e vedere i risultati.
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(onSearch = { keyboard?.hide() }),
-                textStyle = TextStyle(fontSize = 14.5.sp, color = OnSurface),
-                cursorBrush = SolidColor(Green),
-                modifier = Modifier.fillMaxWidth(),
-            )
+        }
+
+        Row(
+            modifier = Modifier
+                .weight(1f)
+                .height(46.dp)
+                .clip(RoundedCornerShape(23.dp))
+                .background(SurfaceContainer)
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Icon(Icons.Default.Search, null, Modifier.size(20.dp), OnSurfaceVariant)
+            Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+                if (query.isEmpty()) {
+                    Text(stringResource(R.string.search_hint), fontSize = 14.5.sp, color = OnSurfaceVariant)
+                }
+                BasicTextField(
+                    value = query,
+                    onValueChange = onQueryChange,
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(onSearch = { keyboard?.hide() }),
+                    textStyle = TextStyle(fontSize = 14.5.sp, color = OnSurface),
+                    cursorBrush = SolidColor(Green),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+            // La crocetta svuota il campo senza uscire dalla ricerca.
+            if (query.isNotEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable { onQueryChange("") },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Default.Close, null, Modifier.size(16.dp), OnSurfaceVariant)
+                }
+            }
         }
     }
 }
@@ -349,14 +447,14 @@ private fun EmptyState(searching: Boolean) {
     ) {
         Icon(Icons.Default.Folder, null, Modifier.size(40.dp), Outline)
         Text(
-            text = if (searching) "Nessun risultato" else "Nessuna scansione in questa categoria",
+            text = if (searching) stringResource(R.string.empty_no_results) else stringResource(R.string.empty_category),
             fontSize = 15.sp,
             fontWeight = FontWeight.Medium,
             color = OnSurfaceStrong,
         )
         Text(
-            text = if (searching) "Prova con un altro termine."
-            else "Tocca Scansiona per aggiungere il primo documento.",
+            text = if (searching) stringResource(R.string.empty_no_results_hint)
+            else stringResource(R.string.empty_category_hint),
             fontSize = 13.sp,
             color = OnSurfaceVariant,
         )
@@ -385,7 +483,7 @@ private fun Shelf(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = folder.name,
+                text = folderName(folder),
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Medium,
                 color = OnSurface,
@@ -400,11 +498,11 @@ private fun Shelf(
             )
             Spacer(Modifier.weight(1f))
             if (editing) {
-                SquareButton(Icons.Default.Edit, "Rinomina cartella", onRename)
+                SquareButton(Icons.Default.Edit, stringResource(R.string.rename_folder_action), onRename)
                 Spacer(Modifier.width(6.dp))
-                SquareButton(Icons.Default.KeyboardArrowUp, "Sposta su", onMoveUp)
+                SquareButton(Icons.Default.KeyboardArrowUp, stringResource(R.string.move_up), onMoveUp)
                 Spacer(Modifier.width(6.dp))
-                SquareButton(Icons.Default.KeyboardArrowDown, "Sposta giù", onMoveDown)
+                SquareButton(Icons.Default.KeyboardArrowDown, stringResource(R.string.move_down), onMoveDown)
                 Spacer(Modifier.width(6.dp))
                 Row(
                     modifier = Modifier
@@ -417,7 +515,7 @@ private fun Shelf(
                     horizontalArrangement = Arrangement.spacedBy(5.dp),
                 ) {
                     Icon(Icons.Default.Delete, null, Modifier.size(17.dp), DangerText)
-                    Text("Elimina", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = DangerText)
+                    Text(stringResource(R.string.delete), fontSize = 12.sp, fontWeight = FontWeight.Medium, color = DangerText)
                 }
             } else {
                 Box(
@@ -429,7 +527,7 @@ private fun Shelf(
                 ) {
                     Icon(
                         Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        "Apri ${folder.name}",
+                        stringResource(R.string.open_folder, folderName(folder)),
                         Modifier.size(20.dp),
                         OnSurfaceVariant,
                     )
@@ -449,7 +547,7 @@ private fun Shelf(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    "Cartella vuota — scansiona un documento per riempirla",
+                    stringResource(R.string.folder_empty),
                     fontSize = 12.5.sp,
                     color = OnSurfaceFaint,
                 )
@@ -530,7 +628,7 @@ private fun DocCard(doc: DocumentRecord, onClick: () -> Unit, onLongClick: () ->
             modifier = Modifier.padding(top = 7.dp),
         )
         Text(
-            text = "${doc.pageLabel} · ${shortDate(doc.createdAtEpochMs)}",
+            text = "${doc.pageLabel()} · ${shortDate(doc.createdAtEpochMs)}",
             fontSize = 11.sp,
             color = OnSurfaceFaint,
             maxLines = 1,
@@ -555,7 +653,7 @@ private fun NewFolderButton(onClick: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Icon(Icons.Default.CreateNewFolder, null, Modifier.size(22.dp), Green)
-        Text("Nuova cartella", fontSize = 14.5.sp, fontWeight = FontWeight.Medium, color = Green)
+        Text(stringResource(R.string.new_folder), fontSize = 14.5.sp, fontWeight = FontWeight.Medium, color = Green)
     }
 }
 
@@ -582,7 +680,7 @@ private fun ScanBar(onScan: () -> Unit, modifier: Modifier = Modifier) {
                 horizontalArrangement = Arrangement.spacedBy(9.dp),
             ) {
                 Icon(Icons.Default.CameraAlt, null, Modifier.size(25.dp), Color.White)
-                Text("Scansiona", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
+                Text(stringResource(R.string.scan), fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White)
             }
         }
     }

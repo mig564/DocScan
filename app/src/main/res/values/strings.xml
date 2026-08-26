@@ -1,4 +1,239 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Testi dell'interfaccia in italiano, lingua predefinita.
+  La traduzione inglese sta in values-en/strings.xml, con le stesse chiavi.
+
+  Nota: le parole che l'estrattore cerca dentro i documenti (fattura,
+  imponibile, partita IVA...) NON stanno qui. Servono a riconoscere documenti
+  italiani, non a parlare con l'utente, e restano nel codice.
+-->
 <resources>
     <string name="app_name">DocScan</string>
+
+    <!-- Libreria -->
+    <string name="library_title">Documenti</string>
+    <string name="library_subtitle">%1$s · %2$s · solo su questo telefono</string>
+    <plurals name="scan_count">
+        <item quantity="one">%d scansione</item>
+        <item quantity="other">%d scansioni</item>
+    </plurals>
+    <plurals name="page_count">
+        <item quantity="one">%d pagina</item>
+        <item quantity="other">%d pagine</item>
+    </plurals>
+    <plurals name="document_count">
+        <item quantity="one">%d documento</item>
+        <item quantity="other">%d documenti</item>
+    </plurals>
+    <string name="search_hint">Cerca scansione</string>
+    <string name="filter_all">Tutti</string>
+    <string name="shelf_recent">Scansioni recenti</string>
+    <string name="shelf_results">Risultati</string>
+    <string name="empty_no_results">Nessun risultato</string>
+    <string name="empty_no_results_hint">Prova con un altro termine.</string>
+    <string name="empty_category">Nessuna scansione in questa categoria</string>
+    <string name="empty_category_hint">Tocca Scansiona per aggiungere il primo documento.</string>
+    <string name="folder_empty">Cartella vuota — scansiona un documento per riempirla</string>
+    <string name="new_folder">Nuova cartella</string>
+    <string name="scan">Scansiona</string>
+    <string name="manage_folders">Gestisci cartelle</string>
+    <string name="done">Fine</string>
+    <string name="settings">Impostazioni</string>
+    <string name="move_up">Sposta su</string>
+    <string name="move_down">Sposta giù</string>
+    <string name="rename_folder_action">Rinomina cartella</string>
+    <string name="delete">Elimina</string>
+    <string name="open_folder">Apri %1$s</string>
+    <string name="unreadable_title">%1$s non leggibili</string>
+    <plurals name="unreadable_count">
+        <item quantity="one">%d documento</item>
+        <item quantity="other">%d documenti</item>
+    </plurals>
+    <string name="unreadable_body">I file sono presenti ma non si riesce a decifrarli. Potrebbero essere recuperabili da un backup del telefono: rimuovili solo se sei sicuro.</string>
+    <string name="unreadable_action">Rimuovi i file danneggiati</string>
+
+    <!-- Cartella -->
+    <string name="sort_name">Nome</string>
+    <string name="sort_modified">Ultima modifica</string>
+    <string name="sort_ascending">Ordine crescente, tocca per invertire</string>
+    <string name="sort_descending">Ordine decrescente, tocca per invertire</string>
+    <string name="actions">Azioni</string>
+    <string name="folder_screen_empty">Cartella vuota</string>
+    <string name="folder_screen_empty_hint">Le scansioni salvate qui compariranno in questo elenco.</string>
+    <string name="fields_to_check">%1$d campi da verificare</string>
+
+    <!-- Modalità di scansione -->
+    <string name="mode_question">Cosa scansioni?</string>
+    <string name="mode_document">Documento</string>
+    <string name="mode_document_desc">Una o più pagine in un unico PDF</string>
+    <string name="mode_card">Tessera</string>
+    <string name="mode_card_desc">Identità, sanitaria, patente, bancomat — fronte e retro su A4 in scala reale</string>
+    <string name="mode_passport">Passaporto</string>
+    <string name="mode_passport_desc">Pagina dati e pagina firma su A4 in scala reale</string>
+    <string name="scan_front">Scansiona il fronte</string>
+    <string name="scan_back">Scansiona il retro</string>
+    <string name="step_one_of_two">Passo 1 di 2</string>
+    <string name="step_two_of_two">Passo 2 di 2</string>
+    <string name="step_document">Potrai aggiungere altre pagine dopo la prima</string>
+
+    <!-- Revisione -->
+    <string name="review_title">Rivedi scansione</string>
+    <string name="review_reading">Lettura del testo sul dispositivo…</string>
+    <string name="review_rereading">%1$s · rilettura del testo…</string>
+    <string name="review_enhanced">%1$s · migliorata automaticamente</string>
+    <string name="a4_caption">A4 · %1$s · 40 mm dall\'alto</string>
+    <string name="fit_true_scale">Scala reale</string>
+    <string name="fit_true_scale_desc">Misurabile col righello, 1:1</string>
+    <string name="fit_fill">Adatta al foglio</string>
+    <string name="fit_fill_desc">Riempie il riquadro, scala non garantita</string>
+    <string name="file_name_label">NOME FILE</string>
+    <string name="share">Condividi</string>
+    <string name="save_to_phone">Salva sul telefono</string>
+    <string name="back">Indietro</string>
+    <string name="add_pages">Aggiungi pagine</string>
+    <string name="remove_page">Elimina pagina</string>
+
+    <!-- Foglio di salvataggio -->
+    <string name="save_sheet_title">Salva %1$s</string>
+    <string name="save_sheet_subtitle">PDF · testo ricercabile · ~%1$s</string>
+    <string name="dest_archive">Archivio DocScan</string>
+    <string name="dest_archive_desc">Cifrato · scegli la cartella</string>
+    <string name="dest_external">Esporta fuori dall\'app</string>
+    <string name="dest_external_desc">Download, scheda SD o altra app</string>
+    <string name="save_sheet_note">Nessun cloud. L\'esportazione crea una copia non cifrata: scegli con cura.</string>
+    <string name="choose_folder">Scegli una cartella</string>
+    <string name="choose_folder_subtitle">Archivio DocScan · sul telefono</string>
+    <string name="folders_from_archive">Crea le cartelle dall\'archivio</string>
+    <string name="saving">Salvataggio sul telefono…</string>
+    <string name="on_phone">Sul telefono</string>
+
+    <!-- Dettaglio -->
+    <string name="tab_pages">Pagine</string>
+    <string name="tab_sheet">Foglio</string>
+    <string name="tab_data">Dati</string>
+    <string name="tab_text">Testo</string>
+    <string name="detail_subtitle">%1$s · PDF · %2$s</string>
+    <string name="share_document">Condividi documento</string>
+    <string name="delete_document">Elimina documento</string>
+    <string name="decrypting">Decifratura…</string>
+    <string name="page_number">Pagina %1$d</string>
+    <string name="front">Fronte</string>
+    <string name="back_side">Retro</string>
+    <string name="sheet_caption">A4 · %1$s %2$s × %3$s mm · %4$s</string>
+    <string name="text_recognized">Testo riconosciuto su %1$s</string>
+    <string name="fields_summary">%1$d campi estratti sul telefono. Tocca un valore per correggerlo.</string>
+    <string name="fields_summary_review">%1$d campi estratti · %2$d da verificare. Tocca un valore per correggerlo.</string>
+    <string name="needs_review">Da verificare — %1$d%% di certezza</string>
+    <string name="no_fields">Nessun campo riconosciuto automaticamente. Il testo completo è nella scheda Testo, e da lì puoi aggiungere i campi che ti servono.</string>
+    <string name="no_text">Nessun testo riconosciuto su questa scansione. Può dipendere da illuminazione, messa a fuoco o scrittura a mano.</string>
+    <string name="copy_all">Copia tutto</string>
+    <string name="copy_all_text">Copia tutto il testo</string>
+    <string name="select_hint">Tieni premuto per selezionare una parte del testo.</string>
+    <string name="confirm_count">Conferma (%1$d)</string>
+    <string name="all_verified">Tutto verificato</string>
+    <string name="add_field">Aggiungi campo</string>
+    <string name="new_field">Nuovo campo</string>
+    <string name="field_label">Etichetta</string>
+    <string name="field_value">Valore</string>
+    <string name="copy_field">Copia %1$s</string>
+    <string name="edit_field">Modifica %1$s</string>
+    <string name="remove_field">Rimuovi %1$s</string>
+    <string name="cancel">Annulla</string>
+    <string name="confirm">Conferma</string>
+    <string name="add">Aggiungi</string>
+    <string name="save">Salva</string>
+
+    <!-- Menu del documento -->
+    <string name="rename">Rinomina</string>
+    <string name="move_to_folder">Sposta in un\'altra cartella</string>
+    <string name="rename_document">Rinomina documento</string>
+    <string name="move_to">Sposta in</string>
+    <string name="current_folder">Cartella attuale</string>
+    <string name="document_pdf">%1$s · PDF</string>
+
+    <!-- Impostazioni -->
+    <string name="appearance">ASPETTO</string>
+    <string name="theme_light">Chiaro</string>
+    <string name="theme_dark">Scuro</string>
+    <string name="theme_system">Sistema</string>
+    <string name="language">LINGUA</string>
+    <string name="language_system">Sistema</string>
+    <string name="language_italian">Italiano</string>
+    <string name="language_english">English</string>
+    <string name="export_folder">CARTELLA DI ESPORTAZIONE</string>
+    <string name="ask_every_time">Chiedi ogni volta</string>
+    <string name="pick_folder_hint">Tocca per sceglierne una fissa</string>
+    <string name="change_folder_hint">Tocca per cambiarla</string>
+    <string name="reset">Azzera</string>
+    <string name="folder_note">Android non consente di memorizzare un percorso: viene salvato il permesso sulla cartella che scegli, e resta valido finché non la revochi o disinstalli l\'app.</string>
+    <string name="no_folder_chosen">Nessuna cartella scelta</string>
+    <string name="internal_storage">Memoria interna</string>
+
+    <!-- Documenti e pagine -->
+    <plurals name="pages">
+        <item quantity="one">%d pagina</item>
+        <item quantity="other">%d pagine</item>
+    </plurals>
+    <string name="one_a4_sheet">1 foglio A4 · fronte e retro</string>
+    <string name="untitled_document">Documento senza nome</string>
+    <string name="scan_default_name">Scansione</string>
+    <string name="identity_document">Documento d\'identità</string>
+    <string name="document_prefix">Documento · %1$s</string>
+    <string name="unsorted">Da ordinare</string>
+    <string name="folder_documents">Documenti e moduli</string>
+    <string name="folder_cards">Carte</string>
+    <string name="folder_receipts">Ricevute</string>
+    <string name="folder_invoices">Fatture</string>
+    <string name="folder_contracts">Contratti</string>
+
+    <!-- Campi estratti -->
+    <string name="field_tax_code">Codice fiscale</string>
+    <string name="field_surname">Cognome</string>
+    <string name="field_given_names">Nome</string>
+    <string name="field_document_number">Numero documento</string>
+    <string name="field_birth_date">Data di nascita</string>
+    <string name="field_expiry">Scadenza</string>
+    <string name="field_nationality">Cittadinanza</string>
+    <string name="field_total">Totale</string>
+    <string name="field_taxable">Imponibile</string>
+    <string name="field_vat">IVA</string>
+    <string name="field_issue_date">Data emissione</string>
+    <string name="field_vat_number">Partita IVA</string>
+    <string name="field_iban">IBAN</string>
+
+    <!-- Messaggi -->
+    <string name="msg_name_empty">Il nome non può essere vuoto</string>
+    <string name="msg_name_taken">Esiste già una cartella con questo nome</string>
+    <string name="msg_name_invalid">Nome non valido o già in uso</string>
+    <string name="msg_folder_created">Cartella \"%1$s\" creata</string>
+    <string name="msg_folder_renamed">Cartella rinominata</string>
+    <string name="msg_folder_deleted">Cartella eliminata · documenti spostati in Da ordinare</string>
+    <string name="msg_saved_in">Salvato in %1$s · %2$s</string>
+    <string name="msg_exported">Esportato · %1$s</string>
+    <string name="msg_exported_in">Esportato in %1$s</string>
+    <string name="msg_export_failed">Copia esterna non riuscita, documento salvato in archivio</string>
+    <string name="msg_permission_lost">Permesso sulla cartella non più valido · salvato in archivio</string>
+    <string name="msg_field_added">Campo \"%1$s\" aggiunto</string>
+    <string name="msg_field_removed">Rimosso \"%1$s\"</string>
+    <string name="msg_fields_confirmed">Campi confermati</string>
+    <string name="msg_document_deleted">Documento eliminato</string>
+    <string name="msg_page_deleted">Pagina eliminata</string>
+    <string name="msg_renamed_to">Rinominato in %1$s</string>
+    <string name="msg_moved_to">Spostato in %1$s</string>
+    <string name="msg_archive_cleared">Archivio svuotato</string>
+    <string name="msg_pdf_failed">Non è stato possibile preparare il PDF</string>
+    <string name="msg_pdf_unavailable">PDF non disponibile per questo documento</string>
+    <string name="msg_scanner_unavailable">Scanner non disponibile: %1$s</string>
+    <string name="msg_no_app">Nessuna app disponibile</string>
+    <string name="msg_purged">Rimossi %1$d file danneggiati</string>
+    <string name="msg_default_folder">Cartella predefinita: %1$s</string>
+    <string name="msg_save_failed">Salvataggio non riuscito: %1$s</string>
+    <string name="msg_share_failed">Condivisione non riuscita: %1$s</string>
+    <string name="msg_retention">%1$d documenti rimossi per scadenza della conservazione</string>
+    <string name="wipe_archive_title">Svuotare l\'archivio?</string>
+    <string name="wipe_archive_body">Tutti i documenti e le scansioni verranno eliminati definitivamente.</string>
+    <string name="wipe_archive_confirm">Elimina tutto</string>
+    <string name="wipe">Svuota</string>
+    <string name="rename_file">Rinomina file</string>
+    <string name="close_keyboard">Chiudi la tastiera</string>
 </resources>

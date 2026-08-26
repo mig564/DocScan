@@ -58,6 +58,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -65,9 +67,12 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import it.example.docscan.R
 import it.example.docscan.data.DocumentRecord
 import it.example.docscan.data.FitMode
 import it.example.docscan.ui.PaperThumb
+import it.example.docscan.ui.fieldLabel
+import it.example.docscan.ui.pageLabel
 import it.example.docscan.ui.review.A4Sheet
 import it.example.docscan.ui.theme.DangerText
 import it.example.docscan.ui.theme.Green
@@ -163,7 +168,7 @@ private fun DetailTopBar(record: DocumentRecord, onBack: () -> Unit, onShare: ()
                 .clickable(onClick = onBack),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Indietro", Modifier.size(23.dp), OnSurfaceStrong)
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), Modifier.size(23.dp), OnSurfaceStrong)
         }
         Column(Modifier.weight(1f)) {
             Text(
@@ -175,7 +180,7 @@ private fun DetailTopBar(record: DocumentRecord, onBack: () -> Unit, onShare: ()
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = "${record.pageLabel} · PDF · ${longDate(record.createdAtEpochMs)}",
+                text = stringResource(R.string.detail_subtitle, record.pageLabel(), longDate(record.createdAtEpochMs)),
                 fontSize = 12.sp,
                 color = OnSurfaceVariant,
             )
@@ -187,7 +192,7 @@ private fun DetailTopBar(record: DocumentRecord, onBack: () -> Unit, onShare: ()
                 .clickable(onClick = onShare),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(Icons.Default.Share, "Condividi documento", Modifier.size(21.dp), OnSurfaceStrong)
+            Icon(Icons.Default.Share, stringResource(R.string.share_document), Modifier.size(21.dp), OnSurfaceStrong)
         }
         Box(
             modifier = Modifier
@@ -196,7 +201,7 @@ private fun DetailTopBar(record: DocumentRecord, onBack: () -> Unit, onShare: ()
                 .clickable(onClick = onDelete),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(Icons.Default.Delete, "Elimina documento", Modifier.size(22.dp), OnSurfaceStrong)
+            Icon(Icons.Default.Delete, stringResource(R.string.delete_document), Modifier.size(22.dp), OnSurfaceStrong)
         }
     }
     Box(Modifier.fillMaxWidth().height(1.dp).background(OutlineSoft))
@@ -206,8 +211,8 @@ private fun DetailTopBar(record: DocumentRecord, onBack: () -> Unit, onShare: ()
 @Composable
 private fun Tabs(selected: Int, isSheet: Boolean, onSelect: (Int) -> Unit) {
     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-        val firstTab = if (isSheet) "Foglio" else "Pagine"
-        listOf(firstTab, "Dati", "Testo").forEachIndexed { index, label ->
+        val firstTab = if (isSheet) stringResource(R.string.tab_sheet) else stringResource(R.string.tab_pages)
+        listOf(firstTab, stringResource(R.string.tab_data), stringResource(R.string.tab_text)).forEachIndexed { index, label ->
             val active = index == selected
             Column(
                 modifier = Modifier.weight(1f).clickable { onSelect(index) },
@@ -260,7 +265,7 @@ private fun SheetTab(record: DocumentRecord, loadPage: suspend (Int) -> Bitmap?)
                 if (bmp != null) {
                     Image(
                         bitmap = bmp.asImageBitmap(),
-                        contentDescription = if (index == 0) "Fronte" else "Retro",
+                        contentDescription = if (index == 0) stringResource(R.string.front) else stringResource(R.string.back_side),
                         contentScale = if (record.fitMode == FitMode.TRUE_SCALE)
                             ContentScale.Fit else ContentScale.Crop,
                         modifier = Modifier.fillMaxSize(),
@@ -270,8 +275,13 @@ private fun SheetTab(record: DocumentRecord, loadPage: suspend (Int) -> Bitmap?)
         }
         item {
             Text(
-                text = "A4 · ${format.label} ${format.widthMm} × ${format.heightMm} mm · " +
-                    record.fitMode.label.lowercase(),
+                text = stringResource(
+                    R.string.sheet_caption,
+                    format.label,
+                    format.widthMm.toString(),
+                    format.heightMm.toString(),
+                    stringResource(record.fitMode.labelRes).lowercase(),
+                ),
                 fontSize = 11.5.sp,
                 color = OnSurfaceFaint,
                 modifier = Modifier.padding(top = 10.dp),
@@ -312,13 +322,13 @@ private fun PageImage(index: Int, loadPage: suspend (Int) -> Bitmap?) {
         if (bmp != null) {
             Image(
                 bitmap = bmp.asImageBitmap(),
-                contentDescription = "Pagina ${index + 1}",
+                contentDescription = stringResource(R.string.page_number, index + 1),
                 contentScale = ContentScale.FillWidth,
                 modifier = Modifier.fillMaxWidth(),
             )
         } else {
             Box(Modifier.fillMaxWidth().height(220.dp), contentAlignment = Alignment.Center) {
-                Text("Decifratura…", fontSize = 12.sp, color = OnSurfaceVariant)
+                Text(stringResource(R.string.decrypting), fontSize = 12.sp, color = OnSurfaceVariant)
             }
         }
     }
@@ -343,7 +353,7 @@ private fun DataTab(
         record.fields.forEachIndexed { index, field ->
             item(key = "field-$index") {
                 FieldRow(
-                    label = field.label,
+                    label = fieldLabel(field.label),
                     value = field.value,
                     needsReview = field.needsReview,
                     confidencePercent = field.confidencePercent,
@@ -356,8 +366,7 @@ private fun DataTab(
         if (record.fields.isEmpty()) {
             item {
                 Text(
-                    "Nessun campo riconosciuto automaticamente. Il testo completo è " +
-                        "nella scheda Testo, e da lì puoi aggiungere i campi che ti servono.",
+                    stringResource(R.string.no_fields),
                     fontSize = 14.sp,
                     color = OnSurfaceVariant,
                     modifier = Modifier.padding(vertical = 20.dp),
@@ -386,16 +395,16 @@ private fun SummaryBanner(record: DocumentRecord) {
         PaperThumb(record.kind, Modifier.size(width = 58.dp, height = 76.dp))
         Column(Modifier.weight(1f)) {
             Text(
-                "Testo riconosciuto su ${record.pageLabel}",
+                stringResource(R.string.text_recognized, record.pageLabel()),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 color = OnGreenTint,
             )
             Text(
                 text = if (record.needsReviewCount > 0)
-                    "${record.fields.size} campi estratti · ${record.needsReviewCount} da verificare. Tocca un valore per correggerlo."
+                    stringResource(R.string.fields_summary_review, record.fields.size, record.needsReviewCount)
                 else
-                    "${record.fields.size} campi estratti sul telefono. Tocca un valore per correggerlo.",
+                    stringResource(R.string.fields_summary, record.fields.size),
                 fontSize = 12.5.sp,
                 color = OnGreenTintSoft,
                 modifier = Modifier.padding(top = 3.dp),
@@ -447,8 +456,8 @@ private fun FieldRow(
                     modifier = Modifier.padding(top = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    SmallAction("Annulla", DangerText) { draft = value; editing = false }
-                    SmallAction("Conferma", Green) { onChange(draft); editing = false }
+                    SmallAction(stringResource(R.string.cancel), DangerText) { draft = value; editing = false }
+                    SmallAction(stringResource(R.string.confirm), Green) { onChange(draft); editing = false }
                 }
             } else {
                 Text(value, fontSize = 15.sp, color = OnSurface)
@@ -465,7 +474,7 @@ private fun FieldRow(
                     ) {
                         Icon(Icons.Default.Info, null, Modifier.size(15.dp), WarnText)
                         Text(
-                            "Da verificare — $confidencePercent% di certezza",
+                            stringResource(R.string.needs_review, confidencePercent),
                             fontSize = 11.5.sp,
                             fontWeight = FontWeight.Medium,
                             color = WarnText,
@@ -477,11 +486,11 @@ private fun FieldRow(
         if (!editing) {
             // Icone esplicite invece di gesti: prima toccare la riga apriva la
             // modifica e copiare un singolo valore era impossibile.
-            RowIcon(Icons.Default.ContentCopy, "Copia $label") {
+            RowIcon(Icons.Default.ContentCopy, stringResource(R.string.copy_field, label)) {
                 clipboard.setText(AnnotatedString(value))
             }
-            RowIcon(Icons.Default.Edit, "Modifica $label") { editing = true }
-            RowIcon(Icons.Default.Close, "Rimuovi $label", onClick = onRemove)
+            RowIcon(Icons.Default.Edit, stringResource(R.string.edit_field, label)) { editing = true }
+            RowIcon(Icons.Default.Close, stringResource(R.string.remove_field, label), onClick = onRemove)
         }
     }
     Box(Modifier.fillMaxWidth().height(1.dp).background(OutlineFaint))
@@ -521,7 +530,7 @@ private fun Actions(onCopyAll: () -> Unit, onConfirmAll: () -> Unit, pendingRevi
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
         ) {
             Icon(Icons.Default.ContentCopy, null, Modifier.size(19.dp), OnSurfaceStrong)
-            Text("Copia tutto", fontSize = 14.sp, color = OnSurfaceStrong)
+            Text(stringResource(R.string.copy_all), fontSize = 14.sp, color = OnSurfaceStrong)
         }
         // "Conferma" marca come verificati i campi rimasti a bassa confidenza:
         // è l'operatore che si assume la responsabilità della lettura.
@@ -537,7 +546,7 @@ private fun Actions(onCopyAll: () -> Unit, onConfirmAll: () -> Unit, pendingRevi
         ) {
             Icon(Icons.Default.Check, null, Modifier.size(19.dp), Color.White)
             Text(
-                text = if (pendingReview > 0) "Conferma ($pendingReview)" else "Tutto verificato",
+                text = if (pendingReview > 0) stringResource(R.string.confirm_count, pendingReview) else stringResource(R.string.all_verified),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 color = Color.White,
@@ -603,8 +612,7 @@ private fun TextTab(record: DocumentRecord) {
         if (text.isBlank()) {
             item {
                 Text(
-                    "Nessun testo riconosciuto su questa scansione. Può dipendere da " +
-                        "illuminazione, messa a fuoco o scrittura a mano.",
+                    stringResource(R.string.no_text),
                     fontSize = 14.sp,
                     color = OnSurfaceVariant,
                 )
@@ -623,7 +631,7 @@ private fun TextTab(record: DocumentRecord) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                 ) {
                     Icon(Icons.Default.ContentCopy, null, Modifier.size(18.dp), OnSurfaceStrong)
-                    Text("Copia tutto il testo", fontSize = 14.sp, color = OnSurfaceStrong)
+                    Text(stringResource(R.string.copy_all_text), fontSize = 14.sp, color = OnSurfaceStrong)
                 }
             }
             item {
@@ -643,7 +651,7 @@ private fun TextTab(record: DocumentRecord) {
             }
             item {
                 Text(
-                    "Tieni premuto per selezionare una parte del testo.",
+                    stringResource(R.string.select_hint),
                     fontSize = 12.sp,
                     color = OnSurfaceFaint,
                     modifier = Modifier.padding(top = 10.dp),
@@ -670,7 +678,7 @@ private fun AddFieldButton(onAdd: (String, String) -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
     ) {
         Icon(Icons.Default.Add, null, Modifier.size(19.dp), Green)
-        Text("Aggiungi campo", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Green)
+        Text(stringResource(R.string.add_field), fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Green)
     }
 
     if (open) {
@@ -708,11 +716,11 @@ private fun AddFieldDialog(onConfirm: (String, String) -> Unit, onDismiss: () ->
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp),
         ) {
-            Text("Nuovo campo", fontSize = 17.sp, fontWeight = FontWeight.Medium, color = OnSurface)
+            Text(stringResource(R.string.new_field), fontSize = 17.sp, fontWeight = FontWeight.Medium, color = OnSurface)
             Spacer(Modifier.height(14.dp))
-            DialogField("Etichetta", label) { label = it }
+            DialogField(stringResource(R.string.field_label), label) { label = it }
             Spacer(Modifier.height(10.dp))
-            DialogField("Valore", value) { value = it }
+            DialogField(stringResource(R.string.field_value), value) { value = it }
             Spacer(Modifier.height(18.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Box(
@@ -724,7 +732,7 @@ private fun AddFieldDialog(onConfirm: (String, String) -> Unit, onDismiss: () ->
                         .clickable(onClick = onDismiss),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text("Annulla", fontSize = 14.sp, color = OnSurfaceStrong)
+                    Text(stringResource(R.string.cancel), fontSize = 14.sp, color = OnSurfaceStrong)
                 }
                 Box(
                     modifier = Modifier
@@ -736,7 +744,7 @@ private fun AddFieldDialog(onConfirm: (String, String) -> Unit, onDismiss: () ->
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        "Aggiungi",
+                        stringResource(R.string.add),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
                         color = Color.White,

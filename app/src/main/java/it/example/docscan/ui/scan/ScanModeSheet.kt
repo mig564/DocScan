@@ -27,10 +27,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import it.example.docscan.R
 import it.example.docscan.data.ScanMode
 import it.example.docscan.ui.BottomSheet
 import it.example.docscan.ui.theme.Green
@@ -65,27 +68,27 @@ fun ScanModeSheet(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 22.dp),
     ) {
 
-            Text("Cosa scansioni?", fontSize = 16.sp, color = OnSurface)
+            Text(stringResource(R.string.mode_question), fontSize = 16.sp, color = OnSurface)
             Spacer(Modifier.height(14.dp))
 
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 ModeTile(
                     icon = Icons.Default.Description,
-                    label = "Documento",
+                    label = stringResource(R.string.mode_document),
                     selected = selected == ScanMode.DOCUMENT,
                     onClick = { onSelect(ScanMode.DOCUMENT) },
                     modifier = Modifier.weight(1f),
                 )
                 ModeTile(
                     icon = Icons.Default.CreditCard,
-                    label = "Tessera",
+                    label = stringResource(R.string.mode_card),
                     selected = selected == ScanMode.CARD,
                     onClick = { onSelect(ScanMode.CARD) },
                     modifier = Modifier.weight(1f),
                 )
                 ModeTile(
                     icon = Icons.Default.Flight,
-                    label = "Passaporto",
+                    label = stringResource(R.string.mode_passport),
                     selected = selected == ScanMode.PASSPORT,
                     onClick = { onSelect(ScanMode.PASSPORT) },
                     modifier = Modifier.weight(1f),
@@ -106,7 +109,7 @@ fun ScanModeSheet(
                 contentAlignment = Alignment.CenterStart,
             ) {
                 Text(
-                    text = selected.description,
+                    text = stringResource(selected.descriptionRes),
                     fontSize = 12.sp,
                     lineHeight = 17.sp,
                     color = OnGreenTint,

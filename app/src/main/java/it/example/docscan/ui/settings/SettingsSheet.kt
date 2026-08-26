@@ -28,10 +28,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import it.example.docscan.R
+import it.example.docscan.data.AppLanguage
 import it.example.docscan.data.AppSettings
 import it.example.docscan.data.ThemeMode
 import it.example.docscan.ui.BottomSheet
@@ -53,6 +56,7 @@ import it.example.docscan.ui.theme.SurfaceContainer
 fun SettingsSheet(
     settings: AppSettings,
     onThemeChange: (ThemeMode) -> Unit,
+    onLanguageChange: (AppLanguage) -> Unit,
     onPickFolder: () -> Unit,
     onClearFolder: () -> Unit,
     onDismiss: () -> Unit,
@@ -62,42 +66,58 @@ fun SettingsSheet(
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 26.dp),
     ) {
 
-            Text("Impostazioni", fontSize = 19.sp, color = OnSurface)
+            Text(stringResource(R.string.settings), fontSize = 19.sp, color = OnSurface)
             Spacer(Modifier.height(20.dp))
 
             // ------------------------------------------------------- Tema
-            SectionLabel("ASPETTO")
+            SectionLabel(stringResource(R.string.appearance))
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 ThemeOption(
                     icon = Icons.Default.LightMode,
-                    label = "Chiaro",
+                    label = stringResource(R.string.theme_light),
                     selected = settings.themeMode == ThemeMode.LIGHT,
                     onClick = { onThemeChange(ThemeMode.LIGHT) },
                     modifier = Modifier.weight(1f),
                 )
                 ThemeOption(
                     icon = Icons.Default.DarkMode,
-                    label = "Scuro",
+                    label = stringResource(R.string.theme_dark),
                     selected = settings.themeMode == ThemeMode.DARK,
                     onClick = { onThemeChange(ThemeMode.DARK) },
                     modifier = Modifier.weight(1f),
                 )
                 ThemeOption(
                     icon = Icons.Default.PhoneAndroid,
-                    label = "Sistema",
+                    label = stringResource(R.string.theme_system),
                     selected = settings.themeMode == ThemeMode.SYSTEM,
                     onClick = { onThemeChange(ThemeMode.SYSTEM) },
                     modifier = Modifier.weight(1f),
                 )
             }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(22.dp))
+
+            // ------------------------------------------------------- Lingua
+            SectionLabel(stringResource(R.string.language))
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                LanguageOption(stringResource(R.string.theme_system), settings.language == AppLanguage.SYSTEM,
+                    { onLanguageChange(AppLanguage.SYSTEM) }, Modifier.weight(1f))
+                LanguageOption(stringResource(R.string.language_italian), settings.language == AppLanguage.ITALIAN,
+                    { onLanguageChange(AppLanguage.ITALIAN) }, Modifier.weight(1f))
+                LanguageOption(stringResource(R.string.language_english), settings.language == AppLanguage.ENGLISH,
+                    { onLanguageChange(AppLanguage.ENGLISH) }, Modifier.weight(1f))
+            }
+
+            Spacer(Modifier.height(22.dp))
 
             // -------------------------------------------- Cartella predefinita
-            SectionLabel("CARTELLA DI ESPORTAZIONE")
+            SectionLabel(stringResource(R.string.export_folder))
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -113,7 +133,7 @@ fun SettingsSheet(
                 Icon(Icons.Default.Folder, null, Modifier.size(22.dp), Green)
                 Column(Modifier.weight(1f)) {
                     Text(
-                        text = settings.defaultFolderLabel ?: "Chiedi ogni volta",
+                        text = settings.defaultFolderLabel ?: stringResource(R.string.ask_every_time),
                         fontSize = 14.5.sp,
                         fontWeight = FontWeight.Medium,
                         color = OnSurface,
@@ -122,8 +142,8 @@ fun SettingsSheet(
                     )
                     Text(
                         text = if (settings.defaultFolderUri == null)
-                            "Tocca per sceglierne una fissa"
-                        else "Tocca per cambiarla",
+                            stringResource(R.string.pick_folder_hint)
+                        else stringResource(R.string.change_folder_hint),
                         fontSize = 12.sp,
                         color = OnSurfaceVariant,
                     )
@@ -138,15 +158,13 @@ fun SettingsSheet(
                             .padding(horizontal = 10.dp),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text("Azzera", fontSize = 12.sp, color = OnSurfaceStrong)
+                        Text(stringResource(R.string.reset), fontSize = 12.sp, color = OnSurfaceStrong)
                     }
                 }
             }
 
             Text(
-                text = "Android non consente di memorizzare un percorso: viene salvato " +
-                    "il permesso sulla cartella che scegli, e resta valido finché non " +
-                    "la revochi o disinstalli l'app.",
+                text = stringResource(R.string.folder_note),
                 fontSize = 11.5.sp,
                 color = OnSurfaceFaint,
                 modifier = Modifier.padding(top = 10.dp),
@@ -209,5 +227,33 @@ private fun ThemeOption(
                 color = if (selected) OnGreenContainer else OnSurfaceStrong,
             )
         }
+    }
+}
+
+/** Pillola di scelta della lingua: come le opzioni del tema, senza icona. */
+@Composable
+private fun LanguageOption(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .height(42.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .then(
+                if (selected) Modifier.background(GreenContainer)
+                else Modifier.border(1.dp, Outline, RoundedCornerShape(12.dp)),
+            )
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = label,
+            fontSize = 13.sp,
+            fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
+            color = if (selected) OnGreenContainer else OnSurfaceStrong,
+        )
     }
 }

@@ -1,7 +1,7 @@
 # DocScan
 
 An Android document scanner. It scans documents and ID cards, pulls the data out
-with on-device OCR, and keeps everything encrypted on the phone. No network.
+with on-device OCR, and keeps everything encrypted on the phone.
 
 <p align="center">
   <img src="docs/photo_1.jpg" width="260" alt="Document library">

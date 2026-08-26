@@ -44,12 +44,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import it.example.docscan.R
 import it.example.docscan.data.DocumentRecord
 import it.example.docscan.ui.theme.DangerText
 import it.example.docscan.ui.theme.Green
@@ -88,19 +91,19 @@ fun DocumentActionsSheet(
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = "${record.pageLabel} · PDF",
+                text = stringResource(R.string.document_pdf, record.pageLabel()),
                 fontSize = 12.5.sp,
                 color = OnSurfaceVariant,
                 modifier = Modifier.padding(bottom = 14.dp),
             )
 
-            ActionRow(Icons.Default.Edit, "Rinomina", Green, onRename)
+            ActionRow(Icons.Default.Edit, stringResource(R.string.rename), Green, onRename)
             Spacer(Modifier.height(6.dp))
-            ActionRow(Icons.AutoMirrored.Filled.DriveFileMove, "Sposta in un'altra cartella", Green, onMove)
+            ActionRow(Icons.AutoMirrored.Filled.DriveFileMove, stringResource(R.string.move_to_folder), Green, onMove)
             Spacer(Modifier.height(6.dp))
-            ActionRow(Icons.Default.Share, "Condividi", Green, onShare)
+            ActionRow(Icons.Default.Share, stringResource(R.string.share), Green, onShare)
             Spacer(Modifier.height(6.dp))
-            ActionRow(Icons.Default.Delete, "Elimina", DangerText, onDelete)
+            ActionRow(Icons.Default.Delete, stringResource(R.string.delete), DangerText, onDelete)
     }
 }
 
@@ -131,7 +134,7 @@ private fun ActionRow(icon: ImageVector, label: String, tint: androidx.compose.u
 fun NameDialog(
     title: String,
     initial: String,
-    confirmLabel: String = "Salva",
+    confirmLabel: String = stringResource(R.string.save),
     /** Messaggio d'errore, oppure null se il nome va bene. */
     validate: (String) -> String? = { null },
     onConfirm: (String) -> Unit,
@@ -225,7 +228,7 @@ fun NameDialog(
                         .clickable(onClick = onDismiss),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text("Annulla", fontSize = 14.sp, color = OnSurfaceStrong)
+                    Text(stringResource(R.string.cancel), fontSize = 14.sp, color = OnSurfaceStrong)
                 }
                 Box(
                     modifier = Modifier
@@ -253,10 +256,12 @@ fun NameDialog(
 
 @Composable
 fun RenameDialog(record: DocumentRecord, onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
+    // Il testo si legge qui: `validate` è una lambda normale, non composable.
+    val emptyError = stringResource(R.string.msg_name_empty)
     NameDialog(
-        title = "Rinomina documento",
+        title = stringResource(R.string.rename_document),
         initial = record.title,
-        validate = { if (it.trim().isBlank()) "Il nome non può essere vuoto" else null },
+        validate = { if (it.trim().isBlank()) emptyError else null },
         onConfirm = onConfirm,
         onDismiss = onDismiss,
     )

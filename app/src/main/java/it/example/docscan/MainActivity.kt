@@ -16,26 +16,32 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
+import it.example.docscan.R
 import it.example.docscan.data.SettingsStore
 import it.example.docscan.ui.DocScanViewModel
 import it.example.docscan.ui.DocumentActionsSheet
+import it.example.docscan.ui.ExportStage
 import it.example.docscan.ui.FolderPickerSheet
 import it.example.docscan.ui.NameDialog
 import it.example.docscan.ui.RenameDialog
 import it.example.docscan.ui.Screen
+import it.example.docscan.ui.WithLanguage
 import it.example.docscan.ui.detail.DetailScreen
 import it.example.docscan.ui.folder.FolderScreen
+import it.example.docscan.ui.folderName
 import it.example.docscan.ui.library.LibraryScreen
 import it.example.docscan.ui.review.ReviewScreen
 import it.example.docscan.ui.scan.ScanModeSheet
@@ -114,6 +120,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val state by vm.state.collectAsStateWithLifecycle()
 
+            WithLanguage(state.settings.language) {
             DocScanTheme(themeMode = state.settings.themeMode) {
 
                 // I toast del design sono transitori: si spengono da soli.
@@ -133,7 +140,9 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                val canGoBack = state.showScanModes ||
+                val canGoBack = state.query.isNotBlank() ||
+                    state.exportStage != ExportStage.CLOSED ||
+                    state.showScanModes ||
                     state.renamingFolder != null ||
                     state.creatingFolder ||
                     state.movingDoc != null ||
@@ -150,6 +159,9 @@ class MainActivity : ComponentActivity() {
                     Box(
                         Modifier
                             .fillMaxSize()
+                            // Solo le barre di sistema: la tastiera la gestisce
+                            // ogni schermata per conto suo, perché non tutte
+                            // devono spostare tutto il contenuto verso l'alto.
                             .windowInsetsPadding(WindowInsets.systemBars)
                             .consumeWindowInsets(WindowInsets.systemBars),
                     ) {
@@ -207,7 +219,7 @@ class MainActivity : ComponentActivity() {
                             onFitModeChange = vm::setFitMode,
                             captureLabel = if (state.scanMode.isTwoSided &&
                                 !vm.bothSidesCaptured(state)
-                            ) "Scansiona il retro" else null,
+                            ) getString(R.string.scan_back) else null,
                             onExportExternal = {
                                 val saved = vm.defaultFolderUri()
                                 if (saved != null) vm.exportToDefaultFolder(saved.toUri())
@@ -244,8 +256,8 @@ class MainActivity : ComponentActivity() {
 
                 state.renamingFolder?.let { folder ->
                     NameDialog(
-                        title = "Rinomina cartella",
-                        initial = folder.name,
+                        title = stringResource(R.string.rename_folder_action),
+                        initial = folderName(folder),
                         validate = { vm.folderNameError(it, exceptId = folder.id) },
                         onConfirm = { vm.renameFolder(folder, it) },
                         onDismiss = vm::cancelFolderRename,
@@ -254,9 +266,9 @@ class MainActivity : ComponentActivity() {
 
                 if (state.creatingFolder) {
                     NameDialog(
-                        title = "Nuova cartella",
+                        title = stringResource(R.string.new_folder),
                         initial = "",
-                        confirmLabel = "Crea",
+                        confirmLabel = stringResource(R.string.add),
                         validate = { vm.folderNameError(it) },
                         onConfirm = vm::createFolder,
                         onDismiss = vm::cancelFolderCreate,
@@ -265,7 +277,7 @@ class MainActivity : ComponentActivity() {
 
                 state.movingDoc?.let { doc ->
                     FolderPickerSheet(
-                        title = "Sposta in",
+                        title = stringResource(R.string.move_to),
                         subtitle = doc.title,
                         folders = state.folders,
                         currentFolderId = doc.folderId,
@@ -308,11 +320,13 @@ class MainActivity : ComponentActivity() {
                     SettingsSheet(
                         settings = state.settings,
                         onThemeChange = vm::setThemeMode,
+                        onLanguageChange = vm::setLanguage,
                         onPickFolder = { folderLauncher.launch(null) },
                         onClearFolder = vm::clearDefaultFolder,
                         onDismiss = vm::closeSettings,
                     )
                 }
+            }
             }
         }
     }
@@ -333,9 +347,9 @@ class MainActivity : ComponentActivity() {
             putExtra(Intent.EXTRA_STREAM, uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        runCatching { startActivity(Intent.createChooser(intent, "Condividi documento")) }
+        runCatching { startActivity(Intent.createChooser(intent, getString(R.string.share_document))) }
             .onFailure {
-                Toast.makeText(this, "Nessuna app disponibile", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.msg_no_app), Toast.LENGTH_SHORT).show()
             }
     }
 
@@ -349,7 +363,7 @@ class MainActivity : ComponentActivity() {
             .addOnFailureListener {
                 Toast.makeText(
                     this,
-                    "Scanner non disponibile: ${it.message}",
+                    getString(R.string.msg_scanner_unavailable, it.message ?: ""),
                     Toast.LENGTH_LONG,
                 ).show()
             }

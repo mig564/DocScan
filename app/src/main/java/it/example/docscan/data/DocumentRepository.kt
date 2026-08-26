@@ -6,12 +6,13 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.provider.DocumentsContract
 import androidx.core.content.FileProvider
+import it.example.docscan.R
+import java.io.File
+import java.util.UUID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import java.io.File
-import java.util.UUID
 
 /**
  * Unico punto di accesso all'archivio: tutto ciò che tocca il disco passa da
@@ -33,18 +34,28 @@ class DocumentRepository(private val context: Context) {
         private const val FOLDERS_FILE = "folders.enc"
         const val FOLDER_UNSORTED = "da-ordinare"
         private const val SHARE_DIR = "condivisi"
+
+        /** Il "(2)" finale aggiunto per distinguere due nomi uguali. */
+        private val COPY_SUFFIX = Regex("""\s*\(\d+\)$""")
     }
 
     // ------------------------------------------------------------- Cartelle
 
     /** Cartelle create al primo avvio. */
     private fun defaultFolders() = listOf(
-        Folder("documenti", "Documenti e moduli", 0),
-        Folder("carte", "Carte", 1),
-        Folder("ricevute", "Ricevute", 2),
-        Folder("fatture", "Fatture", 3),
-        Folder("contratti", "Contratti", 4),
-        Folder(FOLDER_UNSORTED, "Da ordinare", 5),
+        Folder("documenti", "", 0, "folder_documents"),
+        Folder("carte", "", 1, "folder_cards"),
+        Folder("ricevute", "", 2, "folder_receipts"),
+        Folder("fatture", "", 3, "folder_invoices"),
+        Folder("contratti", "", 4, "folder_contracts"),
+        Folder(FOLDER_UNSORTED, "", 5, "unsorted"),
+    )
+
+    /** Chiave attesa per ogni cartella predefinita, usata dalla migrazione. */
+    private val defaultKeys = mapOf(
+        "documenti" to "folder_documents", "carte" to "folder_cards",
+        "ricevute" to "folder_receipts", "fatture" to "folder_invoices",
+        "contratti" to "folder_contracts", FOLDER_UNSORTED to "unsorted",
     )
 
     /**
@@ -59,9 +70,23 @@ class DocumentRepository(private val context: Context) {
             saveFolders(defaults)
             return@withContext defaults
         }
-        runCatching {
+        val stored = runCatching {
             json.decodeFromString<List<Folder>>(String(store.read(FOLDERS_FILE)))
-        }.getOrElse { defaultFolders() }.sortedBy { it.order }
+        }.getOrElse { defaultFolders() }
+
+        // Migrazione: gli archivi creati prima della traduzione hanno il nome
+        // scritto in italiano e nessuna chiave. Se il nome coincide ancora con
+        // quello predefinito la cartella non è mai stata rinominata, quindi
+        // riceve la chiave; se è stato cambiato resta com'è.
+        val migrated = stored.map { folder ->
+            val key = defaultKeys[folder.id]
+            if (folder.nameKey != null || key == null) folder
+            else if (folder.name.isBlank() || folder.name == context.getString(nameRes(key)))
+                folder.copy(name = "", nameKey = key)
+            else folder
+        }
+        if (migrated != stored) saveFolders(migrated)
+        migrated.sortedBy { it.order }
     }
 
     /** Salva l'elenco rinumerando le posizioni. */
@@ -77,8 +102,14 @@ class DocumentRepository(private val context: Context) {
      */
     suspend fun folderNameTaken(name: String, exceptId: String? = null): Boolean {
         val target = name.trim()
-        return folders().any { it.id != exceptId && it.name.trim().equals(target, ignoreCase = true) }
+        return folders().any {
+            it.id != exceptId && displayName(it).trim().equals(target, ignoreCase = true)
+        }
     }
+
+    /** Nome da mostrare: tradotto se predefinita, testuale se creata dall'utente. */
+    fun displayName(folder: Folder): String =
+        folder.nameKey?.let { context.getString(nameRes(it)) } ?: folder.name
 
     /** Null se il nome è vuoto o già in uso. */
     suspend fun addFolder(name: String): List<Folder>? {
@@ -105,12 +136,26 @@ class DocumentRepository(private val context: Context) {
         return next
     }
 
+    /** Nome di risorsa per una chiave di cartella predefinita. */
+    private fun nameRes(key: String): Int = when (key) {
+        "folder_documents" -> R.string.folder_documents
+        "folder_cards" -> R.string.folder_cards
+        "folder_receipts" -> R.string.folder_receipts
+        "folder_invoices" -> R.string.folder_invoices
+        "folder_contracts" -> R.string.folder_contracts
+        else -> R.string.unsorted
+    }
+
     /** Rinomina conservando la posizione: l'ordine non deve cambiare da solo. */
     /** Null se il nome è vuoto o già usato da un'altra cartella. */
     suspend fun renameFolder(folderId: String, newName: String): List<Folder>? {
         val clean = newName.trim()
         if (clean.isBlank() || folderNameTaken(clean, exceptId = folderId)) return null
-        val next = folders().map { if (it.id == folderId) it.copy(name = clean) else it }
+        // Rinominare azzera la chiave: da qui in poi il nome è dell'utente e
+        // non va più tradotto.
+        val next = folders().map {
+            if (it.id == folderId) it.copy(name = clean, nameKey = null) else it
+        }
         saveFolders(next)
         return next
     }
@@ -178,9 +223,46 @@ class DocumentRepository(private val context: Context) {
     }
 
     /**
+     * Titolo libero nella cartella di destinazione.
+     *
+     * Due documenti con lo stesso nome nella stessa cartella non sono un
+     * conflitto tecnico — sul disco ognuno è un UUID — ma per chi guarda
+     * l'elenco sì: due righe identiche, e nessun modo di sapere quale aprire.
+     * Quindi al secondo si aggiunge un numero, come fa qualunque gestore di
+     * file: "Bolletta", "Bolletta (2)", "Bolletta (3)".
+     *
+     * Il confronto ignora maiuscole e spazi ai bordi, perché "bolletta" e
+     * "Bolletta " sono lo stesso nome per chiunque tranne che per un `equals`.
+     * Cartelle diverse non si parlano: lì un nome ripetuto è normale, come in
+     * due directory qualsiasi.
+     *
+     * @param exceptId documento da non considerare, per la rinomina: altrimenti
+     *   un documento risulterebbe in conflitto con se stesso.
+     */
+    suspend fun uniqueTitle(title: String, folderId: String, exceptId: String? = null): String =
+        withContext(Dispatchers.IO) {
+            val base = title.trim().ifBlank { context.getString(R.string.scan_default_name) }
+            val taken = records()
+                .filter { it.folderId == folderId && it.id != exceptId }
+                .map { it.title.trim().lowercase() }
+                .toSet()
+            if (base.lowercase() !in taken) return@withContext base
+
+            // Se il nome finisce già per "(3)" si riparte dalla radice, così da
+            // "Bolletta (3)" nasce "Bolletta (4)" e non "Bolletta (3) (2)".
+            val root = base.replace(COPY_SUFFIX, "").trim().ifBlank { base }
+            var n = 2
+            while ("$root ($n)".lowercase() in taken) n++
+            "$root ($n)"
+        }
+
+    /**
      * Salva pagine, PDF e metadati come un'unica unità. Se fallisce a metà
      * ripulisce: meglio nessun documento che una scansione orfana senza
      * metadati, invisibile nella UI ma presente su disco.
+     *
+     * Il titolo passa da [uniqueTitle]: il nome effettivo del documento è
+     * quello del record restituito, non necessariamente quello richiesto.
      */
     suspend fun save(
         title: String,
@@ -192,6 +274,9 @@ class DocumentRepository(private val context: Context) {
         scanMode: ScanMode = ScanMode.DOCUMENT,
         fitMode: FitMode = FitMode.TRUE_SCALE,
     ): DocumentRecord = withContext(Dispatchers.IO) {
+        // Il nome si risolve prima di scrivere qualsiasi cosa: se l'archivio
+        // non si legge, meglio saperlo adesso che a metà salvataggio.
+        val finalTitle = uniqueTitle(title, folderId)
         // Il PDF viene generato ora dalle pagine effettive, non ereditato dalla
         // sessione di scansione: così resta allineato anche dopo che l'utente ha
         // eliminato o aggiunto pagine in revisione.
@@ -227,7 +312,7 @@ class DocumentRepository(private val context: Context) {
 
             val record = DocumentRecord(
                 id = id,
-                title = title,
+                title = finalTitle,
                 folderId = folderId,
                 createdAtEpochMs = System.currentTimeMillis(),
                 kind = kind,
@@ -252,9 +337,18 @@ class DocumentRepository(private val context: Context) {
         Unit
     }
 
-    /** Sposta un documento in un'altra cartella dopo il salvataggio. */
+    /**
+     * Sposta un documento in un'altra cartella dopo il salvataggio.
+     *
+     * Il titolo si ricontrolla contro la cartella d'arrivo: un nome che era
+     * libero dov'era può essere già occupato dove va, e l'invariante è che due
+     * documenti nella stessa cartella non si chiamino allo stesso modo.
+     */
     suspend fun moveRecord(record: DocumentRecord, folderId: String): DocumentRecord {
-        val updated = record.copy(folderId = folderId)
+        val updated = record.copy(
+            folderId = folderId,
+            title = uniqueTitle(record.title, folderId, exceptId = record.id),
+        )
         updateRecord(updated)
         return updated
     }
@@ -285,8 +379,8 @@ class DocumentRepository(private val context: Context) {
         if (q.isEmpty()) return records
         return records.filter { r ->
             r.title.lowercase().contains(q) ||
-                r.searchText.lowercase().contains(q) ||
-                r.fields.any { it.value.lowercase().contains(q) || it.label.lowercase().contains(q) }
+                    r.searchText.lowercase().contains(q) ||
+                    r.fields.any { it.value.lowercase().contains(q) || it.label.lowercase().contains(q) }
         }
     }
 
@@ -359,7 +453,8 @@ class DocumentRepository(private val context: Context) {
         if (bytes == null) return@withContext null
         runCatching {
             val dir = File(context.cacheDir, SHARE_DIR).apply { mkdirs() }
-            val safe = fileName.replace(Regex("""[/\\:*?"<>|]"""), "_").ifBlank { "Scansione" }
+            val safe = fileName.replace(Regex("""[/\\:*?"<>|]"""), "_")
+                .ifBlank { context.getString(R.string.scan_default_name) }
             val out = File(dir, "$safe.pdf")
             out.writeBytes(bytes)
             FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", out)
@@ -372,7 +467,8 @@ class DocumentRepository(private val context: Context) {
             val dir = File(context.cacheDir, SHARE_DIR).apply { mkdirs() }
             // Il nome del file è quello che vedrà il destinatario, quindi usiamo
             // il titolo del documento e non l'UUID interno.
-            val safeTitle = record.title.replace(Regex("""[/\\:*?"<>|]"""), "_").ifBlank { "Scansione" }
+            val safeTitle = record.title.replace(Regex("""[/\\:*?"<>|]"""), "_")
+                .ifBlank { context.getString(R.string.scan_default_name) }
             val out = File(dir, "$safeTitle.pdf")
             out.writeBytes(store.read(pdfName))
             FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", out)

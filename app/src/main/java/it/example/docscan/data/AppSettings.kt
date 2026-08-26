@@ -2,8 +2,25 @@ package it.example.docscan.data
 
 import android.content.Context
 import androidx.core.content.edit
+import it.example.docscan.R
 
 enum class ThemeMode { LIGHT, DARK, SYSTEM }
+
+/**
+ * Lingua dell'interfaccia.
+ *
+ * [SYSTEM] segue la lingua del telefono, ed è il valore al primo avvio: un'app
+ * che parte in una lingua che non hai scelto è già un errore.
+ *
+ * Riguarda solo i testi mostrati. Le parole che l'estrattore cerca dentro i
+ * documenti restano italiane: servono a riconoscere fatture e tessere italiane,
+ * non a parlare con l'utente.
+ */
+enum class AppLanguage(val tag: String?) {
+    SYSTEM(null),
+    ITALIAN("it"),
+    ENGLISH("en"),
+}
 
 /**
  * Impostazioni dell'app.
@@ -15,6 +32,7 @@ enum class ThemeMode { LIGHT, DARK, SYSTEM }
  */
 data class AppSettings(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val language: AppLanguage = AppLanguage.SYSTEM,
     val defaultFolderUri: String? = null,
     val defaultFolderLabel: String? = null,
 )
@@ -24,12 +42,13 @@ data class AppSettings(
  * sono contenuto dei documenti, e il tema va letto in modo sincrono prima della
  * prima composizione, altrimenti l'app lampeggia in chiaro per un frame.
  */
-class SettingsStore(context: Context) {
+class SettingsStore(private val context: Context) {
 
     private val prefs = context.getSharedPreferences("docscan_settings", Context.MODE_PRIVATE)
 
     companion object {
         private const val KEY_THEME = "theme_mode"
+        private const val KEY_LANGUAGE = "language"
         private const val KEY_FOLDER_URI = "default_folder_uri"
         private const val KEY_FOLDER_LABEL = "default_folder_label"
     }
@@ -47,6 +66,9 @@ class SettingsStore(context: Context) {
         return AppSettings(
             themeMode = runCatching { ThemeMode.valueOf(themeName ?: "") }
                 .getOrDefault(ThemeMode.SYSTEM),
+            language = runCatching {
+                AppLanguage.valueOf(prefs.getString(KEY_LANGUAGE, "") ?: "")
+            }.getOrDefault(AppLanguage.SYSTEM),
             defaultFolderUri = prefs.getString(KEY_FOLDER_URI, null),
             defaultFolderLabel = prefs.getString(KEY_FOLDER_LABEL, null),
         )
@@ -56,6 +78,7 @@ class SettingsStore(context: Context) {
     fun save(settings: AppSettings) {
         prefs.edit {
             putString(KEY_THEME, settings.themeMode.name)
+            putString(KEY_LANGUAGE, settings.language.name)
             putString(KEY_FOLDER_URI, settings.defaultFolderUri)
             putString(KEY_FOLDER_LABEL, settings.defaultFolderLabel)
         }
@@ -63,9 +86,9 @@ class SettingsStore(context: Context) {
 
     /** Da `primary:Download/Scansioni` a `Download > Scansioni`. */
     fun prettyLabel(treeDocumentId: String?): String {
-        if (treeDocumentId.isNullOrBlank()) return "Nessuna cartella scelta"
+        if (treeDocumentId.isNullOrBlank()) return context.getString(R.string.no_folder_chosen)
         val path = treeDocumentId.substringAfter(':', treeDocumentId)
-        if (path.isBlank()) return "Memoria interna"
+        if (path.isBlank()) return context.getString(R.string.internal_storage)
         return path.split('/').filter { it.isNotBlank() }.joinToString(" › ")
     }
 }

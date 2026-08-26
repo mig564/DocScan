@@ -59,6 +59,9 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
+    // Transizioni: material3 la porta già di suo, ma dichiararla rende
+    // esplicito che il progetto la usa.
+    implementation("androidx.compose.animation:animation")
     // Serve per le icone fuori dal set base (Folder, ContentCopy, Download...).
     implementation("androidx.compose.material:material-icons-extended")
     debugImplementation("androidx.compose.ui:ui-tooling")

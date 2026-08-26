@@ -103,13 +103,13 @@ class ParserTest {
 
         val fields = FieldExtractor.extract(fattura).fields
 
-        assertEquals("ML-2026-0418", fields.first { it.label == "Numero documento" }.value)
+        assertEquals("ML-2026-0418", fields.first { it.label == "field_document_number" }.value)
         // Il totale viene dall'etichetta, non dall'importo piu alto: qui le due
         // cose coincidono, ma l'imponibile deve restare un campo distinto.
-        assertEquals("\u20AC 2.480,00", fields.first { it.label == "Totale" }.value)
-        assertEquals("\u20AC 2.032,79", fields.first { it.label == "Imponibile" }.value)
-        assertEquals(1f, fields.first { it.label == "Partita IVA" }.confidence, 0.001f)
-        assertEquals(1f, fields.first { it.label == "IBAN" }.confidence, 0.001f)
+        assertEquals("\u20AC 2.480,00", fields.first { it.label == "field_total" }.value)
+        assertEquals("\u20AC 2.032,79", fields.first { it.label == "field_taxable" }.value)
+        assertEquals(1f, fields.first { it.label == "field_vat_number" }.confidence, 0.001f)
+        assertEquals(1f, fields.first { it.label == "field_iban" }.confidence, 0.001f)
     }
 
     @Test
@@ -135,7 +135,7 @@ class ParserTest {
 
         val fattura = listOf("Acme Srl", "Fattura n. 2026/77", "Totale 120,00", "Partita IVA 12345678901")
         val fields = FieldExtractor.extract(fattura).fields
-        assertFalse(fields.any { it.label == "Partita IVA" })
+        assertFalse(fields.any { it.label == "field_vat_number" })
     }
 
     @Test
@@ -156,8 +156,8 @@ class ParserTest {
 
         val result = FieldExtractor.extract(cie)
         assertEquals(FieldExtractor.DocType.IDENTITY, result.docType)
-        assertTrue(result.fields.any { it.label == "Codice fiscale" })
-        assertFalse(result.fields.any { it.label == "Totale" || it.label == "Partita IVA" })
+        assertTrue(result.fields.any { it.label == "field_tax_code" })
+        assertFalse(result.fields.any { it.label == "field_total" || it.label == "field_vat_number" })
     }
 
     @Test

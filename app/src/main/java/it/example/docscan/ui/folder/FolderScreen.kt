@@ -30,15 +30,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import it.example.docscan.R
 import it.example.docscan.data.DocumentRecord
 import it.example.docscan.data.Folder as DocFolder
 import it.example.docscan.ui.PaperThumb
 import it.example.docscan.ui.SortField
+import it.example.docscan.ui.folderName
+import it.example.docscan.ui.pageLabel
 import it.example.docscan.ui.theme.Green
 import it.example.docscan.ui.theme.GreenContainer
 import it.example.docscan.ui.theme.OnGreenContainer
@@ -81,13 +86,13 @@ fun FolderScreen(
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        "Cartella vuota",
+                        stringResource(R.string.folder_screen_empty),
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Medium,
                         color = OnSurfaceStrong,
                     )
                     Text(
-                        "Le scansioni salvate qui compariranno in questo elenco.",
+                        stringResource(R.string.folder_screen_empty_hint),
                         fontSize = 13.sp,
                         color = OnSurfaceVariant,
                         modifier = Modifier.padding(top = 4.dp),
@@ -125,11 +130,11 @@ private fun TopBar(folder: DocFolder, count: Int, onBack: () -> Unit) {
                 .clickable(onClick = onBack),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Indietro", Modifier.size(23.dp), OnSurfaceStrong)
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), Modifier.size(23.dp), OnSurfaceStrong)
         }
         Column(Modifier.weight(1f)) {
             Text(
-                text = folder.name,
+                text = folderName(folder),
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Medium,
                 color = OnSurface,
@@ -137,7 +142,7 @@ private fun TopBar(folder: DocFolder, count: Int, onBack: () -> Unit) {
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = if (count == 1) "1 documento" else "$count documenti",
+                text = pluralStringResource(R.plurals.document_count, count, count),
                 fontSize = 12.sp,
                 color = OnSurfaceVariant,
             )
@@ -161,8 +166,8 @@ private fun SortBar(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        SortPill("Nome", field == SortField.NAME) { onFieldChange(SortField.NAME) }
-        SortPill("Ultima modifica", field == SortField.MODIFIED) { onFieldChange(SortField.MODIFIED) }
+        SortPill(stringResource(R.string.sort_name), field == SortField.NAME) { onFieldChange(SortField.NAME) }
+        SortPill(stringResource(R.string.sort_modified), field == SortField.MODIFIED) { onFieldChange(SortField.MODIFIED) }
 
         Spacer(Modifier.weight(1f))
 
@@ -179,8 +184,8 @@ private fun SortBar(
             Icon(
                 imageVector = if (ascending) Icons.Default.KeyboardArrowUp
                 else Icons.Default.KeyboardArrowDown,
-                contentDescription = if (ascending) "Ordine crescente, tocca per invertire"
-                else "Ordine decrescente, tocca per invertire",
+                contentDescription = if (ascending) stringResource(R.string.sort_ascending)
+                else stringResource(R.string.sort_descending),
                 modifier = Modifier.size(20.dp),
                 tint = OnSurfaceStrong,
             )
@@ -235,7 +240,7 @@ private fun DocumentRow(doc: DocumentRecord, onClick: () -> Unit, onLongClick: (
                 overflow = TextOverflow.Ellipsis,
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(doc.pageLabel, fontSize = 12.sp, color = OnSurfaceVariant)
+                Text(doc.pageLabel(), fontSize = 12.sp, color = OnSurfaceVariant)
                 Text(
                     text = "  ·  ${fullDate(doc.createdAtEpochMs)}",
                     fontSize = 12.sp,
@@ -245,7 +250,7 @@ private fun DocumentRow(doc: DocumentRecord, onClick: () -> Unit, onLongClick: (
             }
             if (doc.needsReviewCount > 0) {
                 Text(
-                    text = "${doc.needsReviewCount} campi da verificare",
+                    text = stringResource(R.string.fields_to_check, doc.needsReviewCount),
                     fontSize = 11.5.sp,
                     color = Green,
                     modifier = Modifier.padding(top = 2.dp),
@@ -259,7 +264,7 @@ private fun DocumentRow(doc: DocumentRecord, onClick: () -> Unit, onLongClick: (
                 .clickable(onClick = onLongClick),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(Icons.Default.MoreVert, "Azioni", Modifier.size(19.dp), OnSurfaceVariant)
+            Icon(Icons.Default.MoreVert, stringResource(R.string.actions), Modifier.size(19.dp), OnSurfaceVariant)
         }
     }
     Box(

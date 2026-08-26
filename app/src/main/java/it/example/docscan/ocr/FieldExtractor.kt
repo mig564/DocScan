@@ -19,6 +19,18 @@ import it.example.docscan.data.ExtractedField
  */
 object FieldExtractor {
 
+    /**
+     * Chiavi delle etichette riconosciute. Sono stabili e non tradotte: la
+     * traduzione avviene al momento di mostrarle, così un archivio creato in
+     * italiano si legge correttamente anche con l'app in inglese.
+     */
+    val KNOWN_LABELS = setOf(
+        "field_tax_code", "field_surname", "field_given_names", "field_document_number",
+        "field_birth_date", "field_expiry", "field_nationality", "field_total",
+        "field_taxable", "field_vat", "field_issue_date", "field_vat_number", "field_iban",
+    )
+
+
     /** Sotto questa soglia il campo non viene mostrato: è rumore, non un dato. */
     private const val CONFIDENCE_FLOOR = 0.5f
 
@@ -73,14 +85,14 @@ object FieldExtractor {
     private val LABELS = listOf(
         // L'ordine conta: "totale documento" prima di "totale", altrimenti la
         // chiave più corta vincerebbe sempre.
-        Label("Totale", listOf("totale documento", "totale da pagare", "importo totale", "totale complessivo", "totale"), ValueKind.AMOUNT),
-        Label("Imponibile", listOf("imponibile", "subtotale"), ValueKind.AMOUNT),
-        Label("IVA", listOf("iva", "imposta"), ValueKind.AMOUNT),
-        Label("Numero documento", listOf("fattura n", "fattura numero", "documento n", "ricevuta n", "numero documento", "n. fattura"), ValueKind.DOC_NUMBER),
-        Label("Data emissione", listOf("data emissione", "data documento", "data fattura", "data"), ValueKind.DATE),
-        Label("Scadenza", listOf("scadenza", "pagamento entro", "da pagare entro"), ValueKind.DATE),
-        Label("Partita IVA", listOf("partita iva", "p. iva", "p.iva", "piva"), ValueKind.VAT),
-        Label("IBAN", listOf("iban", "coordinate bancarie"), ValueKind.IBAN_VALUE),
+        Label("field_total", listOf("totale documento", "totale da pagare", "importo totale", "totale complessivo", "totale"), ValueKind.AMOUNT),
+        Label("field_taxable", listOf("imponibile", "subtotale"), ValueKind.AMOUNT),
+        Label("field_vat", listOf("iva", "imposta"), ValueKind.AMOUNT),
+        Label("field_document_number", listOf("fattura n", "fattura numero", "documento n", "ricevuta n", "numero documento", "n. fattura"), ValueKind.DOC_NUMBER),
+        Label("field_issue_date", listOf("data emissione", "data documento", "data fattura", "data"), ValueKind.DATE),
+        Label("field_expiry", listOf("scadenza", "pagamento entro", "da pagare entro"), ValueKind.DATE),
+        Label("field_vat_number", listOf("partita iva", "p. iva", "p.iva", "piva"), ValueKind.VAT),
+        Label("field_iban", listOf("iban", "coordinate bancarie"), ValueKind.IBAN_VALUE),
     )
 
     // ----------------------------------------------------------- Entry point
@@ -127,7 +139,7 @@ object FieldExtractor {
                 .distinctBy { it.label },
         )
 
-        val kind = if (fields.none { it.label == "Partita IVA" } && fields.size <= 3)
+        val kind = if (fields.none { it.label == "field_vat_number" } && fields.size <= 3)
             DocKind.RECEIPT else DocKind.FORM
 
         return Result(
@@ -154,12 +166,12 @@ object FieldExtractor {
 
         val fields = mutableListOf<ExtractedField>()
         cf?.let {
-            fields += ExtractedField("Codice fiscale", it.value, if (it.checksumValid) 1f else 0.55f)
+            fields += ExtractedField("field_tax_code", it.value, if (it.checksumValid) 1f else 0.55f)
         }
         mrz?.let { m ->
             val c = if (m.allChecksumsValid) 1f else 0.6f
-            if (m.surname.isNotBlank()) fields += ExtractedField("Cognome", m.surname, c)
-            if (m.givenNames.isNotBlank()) fields += ExtractedField("Nome", m.givenNames, c)
+            if (m.surname.isNotBlank()) fields += ExtractedField("field_surname", m.surname, c)
+            if (m.givenNames.isNotBlank()) fields += ExtractedField("field_given_names", m.givenNames, c)
             fields += ExtractedField(
                 "Numero documento", m.documentNumber.value,
                 if (m.documentNumber.checksumValid) 1f else 0.58f,
@@ -172,7 +184,7 @@ object FieldExtractor {
                 "Scadenza", ItalianDocumentParser.formatMrzDate(m.expiryDate.value),
                 if (m.expiryDate.checksumValid) 1f else 0.58f,
             )
-            if (m.nationality.isNotBlank()) fields += ExtractedField("Cittadinanza", m.nationality, c)
+            if (m.nationality.isNotBlank()) fields += ExtractedField("field_nationality", m.nationality, c)
         }
         return fields
     }
@@ -227,13 +239,13 @@ object FieldExtractor {
         if ("Totale" !in usedLabels) {
             val amounts = AMOUNT.findAll(joined).map { it.value }.toList()
             amounts.maxByOrNull { parseAmount(it) }?.let {
-                found += ExtractedField("Totale", "€ $it", 0.55f)
+                found += ExtractedField("field_total", "€ $it", 0.55f)
             }
         }
         // Un IBAN valido è autoverificante: vale anche senza etichetta.
         if ("IBAN" !in usedLabels) {
             IBAN.find(joined)?.value?.replace(" ", "")?.let { iban ->
-                if (isIbanValid(iban)) found += ExtractedField("IBAN", formatIban(iban), 1f)
+                if (isIbanValid(iban)) found += ExtractedField("field_iban", formatIban(iban), 1f)
             }
         }
         return found
@@ -381,9 +393,9 @@ object FieldExtractor {
         if (mrz != null && mrz.surname.isNotBlank()) {
             val cognome = mrz.surname.lowercase().replaceFirstChar { it.uppercase() }
             val iniziale = mrz.givenNames.firstOrNull()?.let { "$it. " } ?: ""
-            return "Documento · $iniziale$cognome"
+            return "$iniziale$cognome"
         }
-        return "Documento d'identità"
+        return ""
     }
 
     /**
@@ -393,20 +405,27 @@ object FieldExtractor {
      * nome che l'utente cercherà nell'elenco, più del numero di protocollo.
      */
     private fun commercialTitle(lines: List<String>, fields: List<ExtractedField>): String {
-        val numero = fields.firstOrNull { it.label == "Numero documento" }?.value
+        val numero = fields.firstOrNull { it.label == "field_document_number" }?.value
         // L'intestazione è quasi sempre nelle prime righe: è lì che sta il nome
         // dell'emittente, che è ciò che l'utente cerca nell'elenco.
         val emittente = lines.take(3).firstOrNull { it.length in 4..40 && it.any { c -> c.isLetter() } }
-        return listOfNotNull(emittente, numero).joinToString(" · ").ifBlank { "Documento" }
+        // Vuoto, non "Documento": il ripiego localizzato lo mette il ViewModel.
+        return listOfNotNull(emittente, numero).joinToString(" · ")
     }
 
     /**
      * Titolo proposto per una pagina qualsiasi: la prima riga di lunghezza
      * ragionevole che contenga almeno tre lettere. Salta numeri di pagina e
      * intestazioni fatte di soli simboli.
+     *
+     * Quando non c'è nulla di utilizzabile restituisce una stringa vuota, non
+     * un nome di ripiego: qui non si conosce la lingua scelta dall'utente, e un
+     * "Scansione" scritto a mano resterebbe in italiano anche con l'app in
+     * inglese. Il ripiego lo mette chi ha le risorse in mano, cioè
+     * `sanitizeFileName` nel ViewModel, che legge `scan_default_name`.
      */
     private fun genericTitle(lines: List<String>): String =
         lines.firstOrNull { it.length in 4..48 && it.count { c -> c.isLetter() } >= 3 }
             ?.replaceFirstChar { it.uppercase() }
-            ?: "Scansione"
+            ?: ""
 }

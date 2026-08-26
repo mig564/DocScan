@@ -14,6 +14,11 @@ enum class DocKind { FORM, RECEIPT }
  */
 @Serializable
 data class ExtractedField(
+    /**
+     * Etichetta mostrata. Per i campi riconosciuti è una chiave stabile
+     * (`field_total`); per quelli aggiunti a mano è il testo scritto
+     * dall'utente. La chiave si traduce, il testo no — ed è giusto così.
+     */
     val label: String,
     val value: String,
     val confidence: Float = 1f,
@@ -25,8 +30,18 @@ data class ExtractedField(
 @Serializable
 data class Folder(
     val id: String,
+    /** Nome scritto dall'utente. Vuoto per le cartelle predefinite, che usano [nameKey]. */
     val name: String,
     val order: Int,
+    /**
+     * Chiave della cartella predefinita, tradotta al momento di mostrarla.
+     *
+     * Salvare il testo significherebbe congelare la lingua del primo avvio:
+     * chi installa in italiano e poi passa all'inglese si ritroverebbe
+     * "Fatture" in mezzo a un'interfaccia inglese. Rinominare una cartella la
+     * rende personale e azzera la chiave.
+     */
+    val nameKey: String? = null,
 )
 
 @Serializable
@@ -55,18 +70,10 @@ data class DocumentRecord(
     val pageCount: Int get() = pageFiles.size.coerceAtLeast(1)
 
     /**
-     * Una tessera composta su A4 è un foglio, non due pagine. Contare le due
-     * immagini acquisite farebbe dire all'app "2 pagine", come se la
-     * composizione non fosse avvenuta.
+     * Una tessera composta su A4 è un foglio, non due pagine.
+     * L'etichetta leggibile la costruisce la UI: qui non ci sono risorse.
      */
     val isSheet: Boolean get() = scanMode.isTwoSided
-
-    val pageLabel: String
-        get() = when {
-            isSheet -> "1 foglio A4 · fronte e retro"
-            pageCount == 1 -> "1 pagina"
-            else -> "$pageCount pagine"
-        }
 
     val needsReviewCount: Int get() = fields.count { it.needsReview }
 }

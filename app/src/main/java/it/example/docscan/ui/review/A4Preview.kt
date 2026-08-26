@@ -33,9 +33,12 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import it.example.docscan.R
 import it.example.docscan.data.A4Composer
 import it.example.docscan.data.CardFormat
 import it.example.docscan.data.FitMode
@@ -68,9 +71,12 @@ fun A4Sheet(
 ) {
     val slots = remember(format) { A4Composer.slotFractions(format) }
 
+    // Niente fillMaxWidth qui: con `aspectRatio` su un modifier che riempie
+    // tutta l'area, Compose sceglie da solo il lato limitante e il foglio
+    // diventa il più grande che ci sta. Se invece il chiamante passa solo la
+    // larghezza, l'altezza la deriva dalle proporzioni.
     Column(
         modifier = modifier
-            .fillMaxWidth()
             .aspectRatio(A4Composer.a4AspectRatio)
             .clip(RoundedCornerShape(3.dp))
             .background(Color.White)
@@ -108,7 +114,7 @@ fun A4Preview(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = if (index == 0) "Fronte" else "Retro",
+                    text = if (index == 0) stringResource(R.string.front) else stringResource(R.string.back_side),
                     fontSize = 11.sp,
                     color = OnSurfaceFaint,
                 )
@@ -140,7 +146,10 @@ private fun SlotImage(uri: Uri, fitMode: FitMode) {
             // è perfetto); Crop rispecchia il riempimento del riquadro.
             contentScale = if (fitMode == FitMode.TRUE_SCALE) ContentScale.Fit
             else ContentScale.Crop,
+            // fillMaxSize: l'immagine riempie il riquadro della carta, e la
+            // proporzione la garantisce ContentScale, non la misura.
             modifier = Modifier
+                .fillMaxSize()
                 .clip(RoundedCornerShape(2.dp))
                 .background(Color.White),
         )
@@ -170,13 +179,13 @@ fun FitModeSelector(selected: FitMode, onSelect: (FitMode) -> Unit, modifier: Mo
                     .padding(horizontal = 12.dp, vertical = 10.dp),
             ) {
                 Text(
-                    text = mode.label,
+                    text = stringResource(mode.labelRes),
                     fontSize = 13.sp,
                     fontWeight = if (active) FontWeight.Medium else FontWeight.Normal,
                     color = if (active) OnGreenContainer else OnSurfaceStrong,
                 )
                 Text(
-                    text = mode.description,
+                    text = stringResource(mode.descriptionRes),
                     fontSize = 11.sp,
                     color = if (active) OnGreenContainer else OnSurfaceVariant,
                 )

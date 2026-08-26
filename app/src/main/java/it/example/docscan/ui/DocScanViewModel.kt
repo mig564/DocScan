@@ -1,11 +1,15 @@
 package it.example.docscan.ui
 
 import android.app.Application
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.net.Uri
 import android.net.Uri as AndroidUri
+import androidx.annotation.StringRes
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import it.example.docscan.R
+import it.example.docscan.data.AppLanguage
 import it.example.docscan.data.AppSettings
 import it.example.docscan.data.DocKind
 import it.example.docscan.data.DocumentRecord
@@ -51,17 +55,16 @@ data class PendingScan(
     val fields: List<ExtractedField> = emptyList(),
     val searchText: String = "",
     val kind: DocKind = DocKind.FORM,
-    val fileName: String = "Scansione",
+    val fileName: String = "",
     /** Pagina attualmente in anteprima nella schermata di revisione. */
     val selectedPage: Int = 0,
 ) {
     val pageCount: Int get() = pageUris.size.coerceAtLeast(1)
     val selectedUri: Uri? get() = pageUris.getOrNull(selectedPage)
-    val pageLabel: String get() = if (pageCount == 1) "1 pagina" else "$pageCount pagine"
 
     /** Stima grossolana, coerente con quella mostrata nel prototipo. */
-    val fileSizeLabel: String
-        get() = String.format(Locale.ITALY, "%.1f MB", 0.34 + pageCount * 0.29)
+    /** Stima grossolana, coerente con quella mostrata nel prototipo. */
+    val fileSizeMb: Float get() = 0.34f + pageCount * 0.29f
 }
 
 data class UiState(
@@ -102,7 +105,14 @@ data class UiState(
     /** Documento in fase di rinomina, con la bozza del nuovo titolo. */
     val renaming: DocumentRecord? = null,
 ) {
-    companion object { const val FILTER_ALL = "Tutti" }
+    companion object {
+        /**
+         * Sentinella del filtro "tutte le cartelle". Resta una costante fissa
+         * perché viene confrontata con i nomi delle cartelle; l'etichetta
+         * mostrata la traduce la libreria.
+         */
+        const val FILTER_ALL = "__tutte__"
+    }
 }
 
 private const val FILTER_ALL = UiState.FILTER_ALL
@@ -127,6 +137,33 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
      * Unico punto di caricamento dei documenti. Registra anche i file
      * illeggibili, così nessun percorso può dimenticarsene.
      */
+    /**
+     * Testo localizzato per i messaggi del ViewModel.
+     *
+     * Qui `stringResource` non esiste: non siamo in una composizione. Si
+     * costruisce un Context con la lingua scelta, così i messaggi seguono
+     * l'impostazione come il resto dell'interfaccia.
+     */
+    /** Resources con la lingua scelta, per le etichette costruite qui. */
+    private fun res(): android.content.res.Resources {
+        val base = getApplication<Application>()
+        val tag = _state.value.settings.language.tag ?: return base.resources
+        val locale = Locale.forLanguageTag(tag)
+        val config = Configuration(base.resources.configuration).apply { setLocale(locale) }
+        return base.createConfigurationContext(config).resources
+    }
+
+    private fun str(@StringRes id: Int, vararg args: Any): String {
+        val base = getApplication<Application>()
+        val tag = _state.value.settings.language.tag
+        val ctx = if (tag == null) base else {
+            val locale = Locale.forLanguageTag(tag)
+            val config = Configuration(base.resources.configuration).apply { setLocale(locale) }
+            base.createConfigurationContext(config)
+        }
+        return if (args.isEmpty()) ctx.getString(id) else ctx.getString(id, *args)
+    }
+
     private suspend fun loadRecords(): List<DocumentRecord> {
         val archive = runCatching { repo.loadArchive() }
             .getOrDefault(DocumentRepository.ArchiveContents(emptyList(), emptyList()))
@@ -163,7 +200,17 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
             s.creatingFolder -> cancelFolderCreate()
             s.movingDoc != null -> cancelMove()
             s.actionsFor != null -> hideActions()
+            // Il pannello di salvataggio si chiude un passo alla volta: dalla
+            // scelta della cartella si torna alle destinazioni, e da lì
+            // all'anteprima. Durante il salvataggio il back non fa nulla,
+            // perché interromperlo lascerebbe l'archivio a metà.
+            s.exportStage == ExportStage.BUSY -> Unit
+            s.exportStage == ExportStage.FOLDERS -> backToDestinations()
+            s.exportStage != ExportStage.CLOSED -> closeExport()
             s.showScanModes -> closeScanModes()
+            // Uscire dalla ricerca prima di lasciare la schermata: il back
+            // annulla l'ultima cosa fatta, e l'ultima cosa era cercare.
+            s.screen == Screen.LIBRARY && s.query.isNotBlank() -> setQuery("")
             s.showSettings -> closeSettings()
             s.screen == Screen.DETAIL && s.openFolder != null ->
                 _state.update { it.copy(screen = Screen.FOLDER, openDoc = null) }
@@ -204,24 +251,23 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
         // resterebbero visibili e vuote: sembrava che la ricerca non partisse.
         if (s.query.isNotBlank()) {
             val inScope = if (s.filter == FILTER_ALL) matching else {
-                val id = s.folders.firstOrNull { it.name == s.filter }?.id
-                matching.filter { it.folderId == id }
+                matching.filter { it.folderId == s.filter }
             }
             // Nessun esito: si restituisce una lista vuota, così compare il
             // messaggio "Nessun risultato" invece di una mensola che invita a
             // riempire una cartella che non esiste.
             if (inScope.isEmpty()) return emptyList()
-            return listOf(Folder(FOLDER_SEARCH, "Risultati", -1) to inScope)
+            return listOf(Folder(FOLDER_SEARCH, str(R.string.shelf_results), -1) to inScope)
         }
 
         val cutoff = System.currentTimeMillis() - RECENT_WINDOW_MS
-        val recents = Folder(FOLDER_RECENT, "Scansioni recenti", -1) to
-            matching.filter { it.createdAtEpochMs >= cutoff }
+        val recents = Folder(FOLDER_RECENT, str(R.string.shelf_recent), -1) to
+                matching.filter { it.createdAtEpochMs >= cutoff }
         val real = s.folders.map { folder ->
             folder to matching.filter { it.folderId == folder.id }
         }
         val filtered = if (s.filter == FILTER_ALL) listOf(recents) + real
-        else real.filter { it.first.name == s.filter }
+        else real.filter { it.first.id == s.filter }
 
         // In modalità modifica si vedono anche le cartelle vuote, per poterle
         // riordinare o eliminare.
@@ -287,11 +333,16 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
         val clean = newTitle.replace(Regex("""[/\\:*?"<>|]"""), "_").trim()
         if (clean.isBlank()) {
             _state.update { it.copy(renaming = null) }
-            toast("Il nome non puo essere vuoto")
+            toast(str(R.string.msg_name_empty))
             return
         }
         viewModelScope.launch {
-            val updated = record.copy(title = clean)
+            // Stessa regola del salvataggio: nella cartella non possono restare
+            // due documenti con lo stesso nome. `exceptId` evita che il
+            // documento vada in conflitto con se stesso quando lo si rinomina
+            // lasciando il nome com'era.
+            val unique = repo.uniqueTitle(clean, record.folderId, exceptId = record.id)
+            val updated = record.copy(title = unique)
             repo.updateRecord(updated)
             val records = loadRecords()
             _state.update {
@@ -299,7 +350,7 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
                     renaming = null,
                     records = records,
                     openDoc = if (it.openDoc?.id == record.id) updated else it.openDoc,
-                    toast = "Rinominato in $clean",
+                    toast = str(R.string.msg_renamed_to, unique),
                 )
             }
         }
@@ -318,10 +369,10 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
     fun folderNameError(name: String, exceptId: String? = null): String? {
         val clean = name.trim()
         return when {
-            clean.isBlank() -> "Il nome non può essere vuoto"
+            clean.isBlank() -> str(R.string.msg_name_empty)
             _state.value.folders.any {
                 it.id != exceptId && it.name.trim().equals(clean, ignoreCase = true)
-            } -> "Esiste già una cartella con questo nome"
+            } -> str(R.string.msg_name_taken)
             else -> null
         }
     }
@@ -331,14 +382,14 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val folders = repo.addFolder(name)
             if (folders == null) {
-                toast("Nome non valido o già in uso")
+                toast(str(R.string.msg_name_invalid))
                 return@launch
             }
             _state.update {
                 it.copy(
                     folders = folders,
                     creatingFolder = false,
-                    toast = "Cartella \"${name.trim()}\" creata",
+                    toast = str(R.string.msg_folder_created, name.trim()),
                 )
             }
         }
@@ -355,7 +406,7 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
             val folders = repo.deleteFolder(folder.id)
             val records = loadRecords()
             _state.update { it.copy(folders = folders, records = records) }
-            toast("Cartella eliminata · documenti spostati in Da ordinare")
+            toast(str(R.string.msg_folder_deleted))
         }
     }
 
@@ -451,7 +502,7 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
                         searchText = result.searchableText,
                         kind = result.kind,
                     ),
-                    toast = "Pagina eliminata",
+                    toast = str(R.string.msg_page_deleted),
                 )
             }
         }
@@ -503,18 +554,18 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
                         openDoc = record,
                         screen = Screen.DETAIL,
                         records = records,
-                        toast = "Salvato in ${folder.name} · ${record.pageLabel}",
+                        toast = str(R.string.msg_saved_in, folderName(res(), folder), record.pageLabel(res())),
                     )
                 }
             } catch (e: Exception) {
                 _state.update { it.copy(exportStage = ExportStage.CLOSED) }
-                toast("Salvataggio non riuscito: ${e.message}")
+                toast(str(R.string.msg_save_failed, e.message ?: ""))
             }
         }
     }
 
     /** Nome proposto al selettore SAF per l'esportazione fuori dalla sandbox. */
-    fun exportFileName(): String = "${_state.value.pending?.fileName ?: "Scansione"}.pdf"
+    fun exportFileName(): String = "${_state.value.pending?.fileName ?: str(R.string.scan_default_name)}.pdf"
 
     /**
      * Esportazione verso una destinazione esterna. Salva comunque in archivio:
@@ -547,13 +598,13 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
                         openDoc = record,
                         screen = Screen.DETAIL,
                         records = records,
-                        toast = if (ok) "Esportato · ${record.pageLabel}"
-                        else "Copia esterna non riuscita, documento salvato in archivio",
+                        toast = if (ok) str(R.string.msg_exported, record.pageLabel(res()))
+                        else str(R.string.msg_export_failed),
                     )
                 }
             } catch (e: Exception) {
                 _state.update { it.copy(exportStage = ExportStage.CLOSED) }
-                toast("Esportazione non riuscita: ${e.message}")
+                toast(str(R.string.msg_share_failed, e.message ?: ""))
             }
         }
     }
@@ -581,8 +632,11 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
                     scanMode = pending.scanMode,
                     fitMode = pending.fitMode,
                 )
-                val written = repo.exportPdfToTree(record, treeUri, "${pending.fileName}.pdf")
-                val label = _state.value.settings.defaultFolderLabel ?: "cartella predefinita"
+                // Il nome del PDF è quello del record, non quello digitato: se
+                // l'archivio ha aggiunto un "(2)" per non avere due omonimi, il
+                // file sul telefono deve chiamarsi allo stesso modo.
+                val written = repo.exportPdfToTree(record, treeUri, "${record.title}.pdf")
+                val label = _state.value.settings.defaultFolderLabel ?: str(R.string.export_folder)
                 val records = loadRecords()
                 _state.update {
                     it.copy(
@@ -591,13 +645,13 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
                         openDoc = record,
                         screen = Screen.DETAIL,
                         records = records,
-                        toast = if (written != null) "Esportato in $label"
-                        else "Permesso sulla cartella non più valido · salvato in archivio",
+                        toast = if (written != null) str(R.string.msg_exported_in, label)
+                        else str(R.string.msg_permission_lost),
                     )
                 }
             } catch (e: Exception) {
                 _state.update { it.copy(exportStage = ExportStage.CLOSED) }
-                toast("Esportazione non riuscita: ${e.message}")
+                toast(str(R.string.msg_share_failed, e.message ?: ""))
             }
         }
     }
@@ -626,7 +680,7 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
         val l = label.trim()
         val v = value.trim()
         if (l.isBlank() || v.isBlank()) {
-            toast("Etichetta e valore non possono essere vuoti")
+            toast(str(R.string.msg_name_empty))
             return
         }
         viewModelScope.launch {
@@ -634,7 +688,7 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
             repo.updateRecord(updated)
             val records = loadRecords()
             _state.update {
-                it.copy(openDoc = updated, records = records, toast = "Campo \"$l\" aggiunto")
+                it.copy(openDoc = updated, records = records, toast = str(R.string.msg_field_added, l))
             }
         }
     }
@@ -649,7 +703,7 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
             repo.updateRecord(updated)
             val records = loadRecords()
             _state.update {
-                it.copy(openDoc = updated, records = records, toast = "Rimosso \"${removed.label}\"")
+                it.copy(openDoc = updated, records = records, toast = str(R.string.msg_field_removed, removed.label))
             }
         }
     }
@@ -668,7 +722,7 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
             repo.updateRecord(updated)
             val records = loadRecords()
             _state.update { it.copy(openDoc = updated, records = records) }
-            toast("Campi confermati")
+            toast(str(R.string.msg_fields_confirmed))
         }
     }
 
@@ -683,7 +737,7 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
                     openDoc = null,
                     actionsFor = null,
                     screen = if (it.openFolder != null) Screen.FOLDER else Screen.LIBRARY,
-                    toast = "Documento eliminato",
+                    toast = str(R.string.msg_document_deleted),
                 )
             }
         }
@@ -710,7 +764,7 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
             val removed = repo.purgeUnreadable(files)
             val records = loadRecords()
             _state.update {
-                it.copy(records = records, toast = "Rimossi $removed file danneggiati")
+                it.copy(records = records, toast = str(R.string.msg_purged, removed))
             }
         }
     }
@@ -733,7 +787,7 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val folders = repo.renameFolder(folder.id, newName)
             if (folders == null) {
-                toast("Nome non valido o già in uso")
+                toast(str(R.string.msg_name_invalid))
                 return@launch
             }
             val clean = newName.trim()
@@ -743,10 +797,10 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
                     renamingFolder = null,
                     // Il filtro attivo puntava al vecchio nome: senza questo
                     // l'utente si ritrova una libreria vuota dopo la rinomina.
-                    filter = if (it.filter == folder.name) clean else it.filter,
+                    // Il filtro lavora sugli id: rinominare non lo invalida più.
                     openFolder = if (it.openFolder?.id == folder.id)
                         it.openFolder.copy(name = clean) else it.openFolder,
-                    toast = "Cartella rinominata",
+                    toast = str(R.string.msg_folder_renamed),
                 )
             }
         }
@@ -771,7 +825,7 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
                     movingDoc = null,
                     records = records,
                     openDoc = if (it.openDoc?.id == record.id) updated else it.openDoc,
-                    toast = "Spostato in ${folder.name}",
+                    toast = str(R.string.msg_moved_to, folderName(res(), folder)),
                 )
             }
         }
@@ -788,9 +842,9 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Testo del pulsante: le modalita a due facciate dichiarano il passo. */
     fun scanButtonLabel(s: UiState): String = when {
-        !s.scanMode.isTwoSided -> "Scansiona"
-        s.pending == null || s.pending.pageUris.isEmpty() -> "Scansiona il fronte"
-        else -> "Scansiona il retro"
+        !s.scanMode.isTwoSided -> str(R.string.scan)
+        s.pending == null || s.pending.pageUris.isEmpty() -> str(R.string.scan_front)
+        else -> str(R.string.scan_back)
     }
 
     /**
@@ -798,9 +852,9 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
      * facciate, il pannello cambiava altezza passando da una all'altra.
      */
     fun scanStepLabel(s: UiState): String = when {
-        !s.scanMode.isTwoSided -> "Potrai aggiungere altre pagine dopo la prima"
-        s.pending == null || s.pending.pageUris.isEmpty() -> "Passo 1 di 2"
-        else -> "Passo 2 di 2"
+        !s.scanMode.isTwoSided -> str(R.string.step_document)
+        s.pending == null || s.pending.pageUris.isEmpty() -> str(R.string.step_one_of_two)
+        else -> str(R.string.step_two_of_two)
     }
 
     /**
@@ -834,7 +888,7 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val uri = repo.pdfForSharing(record)
             if (uri == null) {
-                toast("PDF non disponibile per questo documento")
+                toast(str(R.string.msg_pdf_unavailable))
                 return@launch
             }
             _state.update { it.copy(pendingShareUri = uri.toString(), actionsFor = null) }
@@ -866,7 +920,7 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
                 it.copy(
                     busy = false,
                     pendingShareUri = uri?.toString(),
-                    toast = if (uri == null) "Non è stato possibile preparare il PDF" else null,
+                    toast = if (uri == null) str(R.string.msg_pdf_failed) else null,
                 )
             }
         }
@@ -885,6 +939,13 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
     /** Chiude le impostazioni. */
     fun closeSettings() = _state.update { it.copy(showSettings = false) }
 
+    /** Cambia lingua e la salva subito. */
+    fun setLanguage(language: AppLanguage) {
+        val next = _state.value.settings.copy(language = language)
+        settingsStore.save(next)
+        _state.update { it.copy(settings = next) }
+    }
+
     /** Cambia tema e lo salva subito: deve sopravvivere alla chiusura dell'app. */
     fun setThemeMode(mode: ThemeMode) {
         val next = _state.value.settings.copy(themeMode = mode)
@@ -899,7 +960,7 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
             defaultFolderLabel = label,
         )
         settingsStore.save(next)
-        _state.update { it.copy(settings = next, toast = "Cartella predefinita: $label") }
+        _state.update { it.copy(settings = next, toast = str(R.string.msg_default_folder, label)) }
     }
 
     /**
@@ -926,7 +987,7 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Toglie dal nome i caratteri vietati nei nomi file e lo accorcia a 60 caratteri. */
     private fun sanitizeFileName(raw: String): String =
-        raw.replace(Regex("""[/\\:*?"<>|]"""), "_").take(60).trim().ifBlank { "Scansione" }
+        raw.replace(Regex("""[/\\:*?"<>|]"""), "_").take(60).trim().ifBlank { str(R.string.scan_default_name) }
 
     /** Rilascia il riconoscitore OCR quando il ViewModel viene distrutto. */
     override fun onCleared() {

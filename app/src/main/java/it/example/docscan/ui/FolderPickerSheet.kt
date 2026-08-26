@@ -24,10 +24,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import it.example.docscan.R
 import it.example.docscan.data.Folder
 import it.example.docscan.ui.theme.Green
 import it.example.docscan.ui.theme.GreenContainer
@@ -93,7 +95,7 @@ fun FolderPickerSheet(
                             tint = if (isCurrent) OnGreenContainer else Green,
                         )
                         Text(
-                            text = folder.name,
+                            text = folderName(folder),
                             fontSize = 14.5.sp,
                             fontWeight = FontWeight.Medium,
                             color = if (isCurrent) OnGreenContainer else OnSurface,
@@ -104,7 +106,7 @@ fun FolderPickerSheet(
                         if (isCurrent) {
                             Icon(
                                 Icons.Default.Check,
-                                "Cartella attuale",
+                                stringResource(R.string.current_folder),
                                 Modifier.size(19.dp),
                                 OnGreenContainer,
                             )

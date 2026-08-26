@@ -1,5 +1,8 @@
 package it.example.docscan.data
 
+import androidx.annotation.StringRes
+import it.example.docscan.R
+
 /**
  * Come viene composto il PDF.
  *
@@ -11,25 +14,13 @@ package it.example.docscan.data
  * Il passaporto ha un preset suo perché è l'unico con forma diversa: ID-3.
  */
 enum class ScanMode(
-    val label: String,
-    val description: String,
+    @StringRes val labelRes: Int,
+    @StringRes val descriptionRes: Int,
     val format: CardFormat?,
 ) {
-    DOCUMENT(
-        label = "Documento",
-        description = "Una o più pagine in un unico PDF",
-        format = null,
-    ),
-    CARD(
-        label = "Tessera",
-        description = "Identità, sanitaria, patente, bancomat — fronte e retro su A4 in scala reale",
-        format = CardFormat.ID_1,
-    ),
-    PASSPORT(
-        label = "Passaporto",
-        description = "Pagina dati e pagina firma su A4 in scala reale",
-        format = CardFormat.ID_3,
-    );
+    DOCUMENT(R.string.mode_document, R.string.mode_document_desc, null),
+    CARD(R.string.mode_card, R.string.mode_card_desc, CardFormat.ID_1),
+    PASSPORT(R.string.mode_passport, R.string.mode_passport_desc, CardFormat.ID_3);
 
     /** Le modalità a due facciate compongono un A4, il documento normale no. */
     val isTwoSided: Boolean get() = format != null
@@ -55,14 +46,14 @@ enum class CardFormat(
 }
 
 /** Come sistemare l'immagine acquisita dentro il rettangolo della carta. */
-enum class FitMode(val label: String, val description: String) {
+enum class FitMode(@StringRes val labelRes: Int, @StringRes val descriptionRes: Int) {
     /**
      * L'immagine entra nel rettangolo esatto della carta mantenendo le
      * proporzioni. Un ritaglio impreciso lascia margini bianchi invece di
      * stirare la carta e falsare la misura stampata.
      */
-    TRUE_SCALE("Scala reale", "Misurabile col righello, 1:1"),
+    TRUE_SCALE(R.string.fit_true_scale, R.string.fit_true_scale_desc),
 
     /** L'immagine riempie il rettangolo e l'eccesso viene ritagliato. Scala non garantita. */
-    FILL("Adatta al foglio", "Riempie il riquadro, scala non garantita"),
+    FILL(R.string.fit_fill, R.string.fit_fill_desc),
 }
