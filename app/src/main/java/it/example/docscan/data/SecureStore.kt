@@ -34,6 +34,17 @@ class SecureStore(private val context: Context) {
         get() = File(context.filesDir, DIR).apply { mkdirs() }
 
     /**
+     * Chiave AES-256 dell'archivio, risolta una volta sola per processo.
+     *
+     * Interrogare l'Android Keystore costa: è un servizio di sistema, e la
+     * chiamata attraversa Binder. Farlo a ogni file significava pagarlo una
+     * volta per documento a ogni apertura dell'archivio, e con qualche centinaio
+     * di documenti si sente. La chiave non lascia comunque il Keystore: quello
+     * che teniamo qui è un riferimento opaco, non il materiale crittografico.
+     */
+    private val key: SecretKey by lazy { getOrCreateKey() }
+
+    /**
      * Chiave AES-256 dell'archivio: la prende dal Keystore o la genera al primo uso.
      *
      * La chiave non esce mai dal Keystore. Si cifra e decifra passandogli i dati,
@@ -71,7 +82,7 @@ class SecureStore(private val context: Context) {
      */
     fun write(fileName: String, plain: ByteArray): File {
         val cipher = Cipher.getInstance(TRANSFORMATION).apply {
-            init(Cipher.ENCRYPT_MODE, getOrCreateKey())
+            init(Cipher.ENCRYPT_MODE, key)
         }
         val out = File(dir, fileName)
         out.outputStream().use { stream ->
@@ -94,7 +105,7 @@ class SecureStore(private val context: Context) {
         val iv = bytes.copyOfRange(0, IV_SIZE)
         val payload = bytes.copyOfRange(IV_SIZE, bytes.size)
         val cipher = Cipher.getInstance(TRANSFORMATION).apply {
-            init(Cipher.DECRYPT_MODE, getOrCreateKey(), GCMParameterSpec(TAG_BITS, iv))
+            init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(TAG_BITS, iv))
         }
         return cipher.doFinal(payload)
     }

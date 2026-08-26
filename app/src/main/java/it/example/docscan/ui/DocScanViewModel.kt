@@ -23,9 +23,7 @@ import it.example.docscan.data.ThemeMode
 import it.example.docscan.ocr.FieldExtractor
 import it.example.docscan.ocr.Ocr
 import java.util.Locale
-import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -200,6 +198,7 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
             s.creatingFolder -> cancelFolderCreate()
             s.movingDoc != null -> cancelMove()
             s.actionsFor != null -> hideActions()
+            s.showSettings -> closeSettings()
             // Il pannello di salvataggio si chiude un passo alla volta: dalla
             // scelta della cartella si torna alle destinazioni, e da lì
             // all'anteprima. Durante il salvataggio il back non fa nulla,
@@ -211,7 +210,6 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
             // Uscire dalla ricerca prima di lasciare la schermata: il back
             // annulla l'ultima cosa fatta, e l'ultima cosa era cercare.
             s.screen == Screen.LIBRARY && s.query.isNotBlank() -> setQuery("")
-            s.showSettings -> closeSettings()
             s.screen == Screen.DETAIL && s.openFolder != null ->
                 _state.update { it.copy(screen = Screen.FOLDER, openDoc = null) }
             s.screen == Screen.FOLDER -> closeFolder()
@@ -545,7 +543,6 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
                     scanMode = pending.scanMode,
                     fitMode = pending.fitMode,
                 )
-                delay(200.milliseconds)
                 val records = loadRecords()
                 _state.update {
                     it.copy(
@@ -895,10 +892,6 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    /**
-     * Condivide una scansione appena acquisita. Salva prima in archivio: se
-     * l'utente annulla la condivisione, la scansione non deve andare persa.
-     */
     /**
      * Condivide la scansione senza salvarla in archivio.
      *
