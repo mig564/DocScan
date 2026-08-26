@@ -19,18 +19,6 @@ import it.example.docscan.data.ExtractedField
  */
 object FieldExtractor {
 
-    /**
-     * Chiavi delle etichette riconosciute. Sono stabili e non tradotte: la
-     * traduzione avviene al momento di mostrarle, così un archivio creato in
-     * italiano si legge correttamente anche con l'app in inglese.
-     */
-    val KNOWN_LABELS = setOf(
-        "field_tax_code", "field_surname", "field_given_names", "field_document_number",
-        "field_birth_date", "field_expiry", "field_nationality", "field_total",
-        "field_taxable", "field_vat", "field_issue_date", "field_vat_number", "field_iban",
-    )
-
-
     /** Sotto questa soglia il campo non viene mostrato: è rumore, non un dato. */
     private const val CONFIDENCE_FLOOR = 0.5f
 

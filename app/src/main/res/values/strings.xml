@@ -7,8 +7,16 @@
   imponibile, partita IVA...) NON stanno qui. Servono a riconoscere documenti
   italiani, non a parlare con l'utente, e restano nel codice.
 -->
-<resources>
-    <string name="app_name">DocScan</string>
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:locale="it">
+    <!--
+      tools:locale dice a lint che questo file è in italiano: senza, controlla
+      l'ortografia in inglese e segnala parole come "possibile" come errori di
+      battitura.
+    -->
+
+    <!-- Il nome dell'app non si traduce: è il nome del prodotto, uguale in ogni lingua. -->
+    <string name="app_name" translatable="false">DocScan</string>
 
     <!-- Libreria -->
     <string name="library_title">Documenti</string>
@@ -175,7 +183,6 @@
         <item quantity="other">%d pagine</item>
     </plurals>
     <string name="one_a4_sheet">1 foglio A4 · fronte e retro</string>
-    <string name="untitled_document">Documento senza nome</string>
     <string name="scan_default_name">Scansione</string>
     <string name="identity_document">Documento d\'identità</string>
     <string name="document_prefix">Documento · %1$s</string>

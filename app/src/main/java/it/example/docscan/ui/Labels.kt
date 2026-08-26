@@ -2,7 +2,6 @@ package it.example.docscan.ui
 
 import android.content.res.Resources
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import it.example.docscan.R
@@ -27,24 +26,11 @@ fun DocumentRecord.pageLabel(res: Resources): String =
     if (isSheet) res.getString(R.string.one_a4_sheet)
     else res.getQuantityString(R.plurals.pages, pageCount, pageCount)
 
-/** Titolo mostrato in elenco: nome scelto, oppure nome e cognome, oppure il codice fiscale. */
-@Composable
-fun DocumentRecord.displayTitle(): String =
-    title.ifBlank { stringResource(R.string.untitled_document) }
-
 /** Numero di pagine di una scansione ancora in revisione. */
 @Composable
 fun pendingPageLabel(pageCount: Int, isSheet: Boolean): String =
     if (isSheet) stringResource(R.string.one_a4_sheet)
     else pluralStringResource(R.plurals.pages, pageCount, pageCount)
-
-fun pendingPageLabel(res: Resources, pageCount: Int, isSheet: Boolean): String =
-    if (isSheet) res.getString(R.string.one_a4_sheet)
-    else res.getQuantityString(R.plurals.pages, pageCount, pageCount)
-
-/** Contesto con la lingua scelta, per chi non sta dentro una composizione. */
-@Composable
-fun currentResources(): Resources = LocalContext.current.resources
 
 /**
  * Etichetta di un campo estratto.

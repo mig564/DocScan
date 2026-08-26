@@ -27,7 +27,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -71,24 +70,27 @@ fun ScanModeSheet(
             Text(stringResource(R.string.mode_question), fontSize = 16.sp, color = OnSurface)
             Spacer(Modifier.height(14.dp))
 
+            // L'etichetta la porta l'enum, non la piastrella: il nome di una
+            // modalità è una proprietà della modalità, e ripeterlo qui
+            // significherebbe tenerne due copie allineate a mano.
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 ModeTile(
                     icon = Icons.Default.Description,
-                    label = stringResource(R.string.mode_document),
+                    label = stringResource(ScanMode.DOCUMENT.labelRes),
                     selected = selected == ScanMode.DOCUMENT,
                     onClick = { onSelect(ScanMode.DOCUMENT) },
                     modifier = Modifier.weight(1f),
                 )
                 ModeTile(
                     icon = Icons.Default.CreditCard,
-                    label = stringResource(R.string.mode_card),
+                    label = stringResource(ScanMode.CARD.labelRes),
                     selected = selected == ScanMode.CARD,
                     onClick = { onSelect(ScanMode.CARD) },
                     modifier = Modifier.weight(1f),
                 )
                 ModeTile(
                     icon = Icons.Default.Flight,
-                    label = stringResource(R.string.mode_passport),
+                    label = stringResource(ScanMode.PASSPORT.labelRes),
                     selected = selected == ScanMode.PASSPORT,
                     onClick = { onSelect(ScanMode.PASSPORT) },
                     modifier = Modifier.weight(1f),

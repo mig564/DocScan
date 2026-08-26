@@ -72,7 +72,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -207,33 +206,33 @@ fun ReviewScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center,
                 ) {
-                    when {
-                        pending == null -> Loading()
+                when {
+                    pending == null -> Loading()
 
-                        fmt != null -> Column(
+                    fmt != null -> Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp, vertical = 4.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        A4Preview(
+                            pageUris = pending.pageUris,
+                            format = fmt,
+                            fitMode = pending.fitMode,
                             modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 16.dp, vertical = 4.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            A4Preview(
-                                pageUris = pending.pageUris,
-                                format = fmt,
-                                fitMode = pending.fitMode,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .align(Alignment.CenterHorizontally),
-                            )
-                            Text(
-                                text = stringResource(R.string.a4_caption, fmt.label),
-                                fontSize = 11.sp,
-                                color = OnSurfaceFaint,
-                                modifier = Modifier.padding(top = 6.dp),
-                            )
-                        }
-
-                        else -> PagePreview(pending, busy)
+                                .weight(1f)
+                                .align(Alignment.CenterHorizontally),
+                        )
+                        Text(
+                            text = stringResource(R.string.a4_caption, fmt.label),
+                            fontSize = 11.sp,
+                            color = OnSurfaceFaint,
+                            modifier = Modifier.padding(top = 6.dp),
+                        )
                     }
+
+                    else -> PagePreview(pending, busy)
+                }
                 }
             }
 
@@ -291,9 +290,9 @@ fun ReviewScreen(
                 AnimatedVisibility(
                     visible = !renaming,
                     enter = expandVertically(tween(BandAnimationMillis)) +
-                            fadeIn(tween(BandAnimationMillis)),
+                        fadeIn(tween(BandAnimationMillis)),
                     exit = shrinkVertically(tween(BandAnimationMillis)) +
-                            fadeOut(tween(BandAnimationMillis)),
+                        fadeOut(tween(BandAnimationMillis)),
                 ) {
                     BottomActions(
                         enabled = !busy,
@@ -678,106 +677,106 @@ private fun ExportSheet(
         // Altezza minima comune alle tre fasi: senza, il pannello saltava
         // passando da "dove salvo" a "quale cartella" a "sto salvando".
         Column(Modifier.heightIn(min = 248.dp)) {
-            when (stage) {
-                ExportStage.DESTINATIONS -> {
-                    Text(stringResource(R.string.save_sheet_title, pendingPageLabel(pending.pageCount, pending.scanMode.isTwoSided)), fontSize = 19.sp, color = OnSurface)
-                    Text(
-                        stringResource(R.string.save_sheet_subtitle, String.format(Locale.getDefault(), "%.1f MB", pending.fileSizeMb)),
-                        fontSize = 13.sp,
-                        color = OnSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 16.dp),
-                    )
-                    DestinationRow(
-                        icon = Icons.Default.Folder,
-                        label = stringResource(R.string.dest_archive),
-                        sub = stringResource(R.string.dest_archive_desc),
-                        onClick = onShowFolders,
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    DestinationRow(
-                        icon = Icons.Default.Download,
-                        label = stringResource(R.string.dest_external),
-                        sub = stringResource(R.string.dest_external_desc),
-                        onClick = onExportExternal,
-                    )
-                    Text(
-                        stringResource(R.string.save_sheet_note),
-                        fontSize = 12.sp,
-                        color = OnSurfaceVariant,
-                        modifier = Modifier.padding(top = 14.dp),
-                    )
-                }
-
-                ExportStage.FOLDERS -> {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            Modifier
-                                .size(38.dp)
-                                .clip(RoundedCornerShape(19.dp))
-                                .clickable(onClick = onBackToDestinations),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.ArrowBack,
-                                stringResource(R.string.back),
-                                Modifier.size(21.dp),
-                                OnSurfaceStrong,
-                            )
-                        }
-                        Spacer(Modifier.width(10.dp))
-                        Column {
-                            Text(stringResource(R.string.choose_folder), fontSize = 18.sp, color = OnSurface)
-                            Text(stringResource(R.string.choose_folder_subtitle), fontSize = 12.5.sp, color = OnSurfaceVariant)
-                        }
-                    }
-                    Column(
-                        modifier = Modifier
-                            .heightIn(max = 186.dp)
-                            .verticalScroll(rememberScrollState())
-                            .padding(top = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        folders.forEach { folder ->
-                            DestinationRow(
-                                icon = Icons.Default.Folder,
-                                label = folderName(folder),
-                                sub = stringResource(R.string.on_phone),
-                                onClick = { onSaveToFolder(folder) },
-                            )
-                        }
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(56.dp)
-                                .clip(RoundedCornerShape(14.dp))
-                                .border(1.dp, OutlineDashed, RoundedCornerShape(14.dp))
-                                .padding(horizontal = 16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(14.dp),
-                        ) {
-                            Icon(Icons.Default.CreateNewFolder, null, Modifier.size(22.dp), Green)
-                            Text(stringResource(R.string.folders_from_archive), fontSize = 14.5.sp, color = OnSurfaceFaint)
-                        }
-                    }
-                }
-
-                ExportStage.BUSY -> {
-                    Text(stringResource(R.string.saving), fontSize = 19.sp, color = OnSurface)
-                    Text(
-                        "${pending.fileName}.pdf · ${pendingPageLabel(pending.pageCount, pending.scanMode.isTwoSided)}",
-                        fontSize = 13.sp,
-                        color = OnSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 20.dp),
-                    )
-                    LinearProgressIndicator(
-                        modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
-                        color = Green,
-                    )
-                    Spacer(Modifier.height(26.dp))
-                }
-
-                ExportStage.CLOSED -> Unit
+        when (stage) {
+            ExportStage.DESTINATIONS -> {
+                Text(stringResource(R.string.save_sheet_title, pendingPageLabel(pending.pageCount, pending.scanMode.isTwoSided)), fontSize = 19.sp, color = OnSurface)
+                Text(
+                    stringResource(R.string.save_sheet_subtitle, String.format(Locale.getDefault(), "%.1f MB", pending.fileSizeMb)),
+                    fontSize = 13.sp,
+                    color = OnSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 16.dp),
+                )
+                DestinationRow(
+                    icon = Icons.Default.Folder,
+                    label = stringResource(R.string.dest_archive),
+                    sub = stringResource(R.string.dest_archive_desc),
+                    onClick = onShowFolders,
+                )
+                Spacer(Modifier.height(8.dp))
+                DestinationRow(
+                    icon = Icons.Default.Download,
+                    label = stringResource(R.string.dest_external),
+                    sub = stringResource(R.string.dest_external_desc),
+                    onClick = onExportExternal,
+                )
+                Text(
+                    stringResource(R.string.save_sheet_note),
+                    fontSize = 12.sp,
+                    color = OnSurfaceVariant,
+                    modifier = Modifier.padding(top = 14.dp),
+                )
             }
+
+            ExportStage.FOLDERS -> {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        Modifier
+                            .size(38.dp)
+                            .clip(RoundedCornerShape(19.dp))
+                            .clickable(onClick = onBackToDestinations),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            stringResource(R.string.back),
+                            Modifier.size(21.dp),
+                            OnSurfaceStrong,
+                        )
+                    }
+                    Spacer(Modifier.width(10.dp))
+                    Column {
+                        Text(stringResource(R.string.choose_folder), fontSize = 18.sp, color = OnSurface)
+                        Text(stringResource(R.string.choose_folder_subtitle), fontSize = 12.5.sp, color = OnSurfaceVariant)
+                    }
+                }
+                Column(
+                    modifier = Modifier
+                        .heightIn(max = 186.dp)
+                        .verticalScroll(rememberScrollState())
+                        .padding(top = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    folders.forEach { folder ->
+                        DestinationRow(
+                            icon = Icons.Default.Folder,
+                            label = folderName(folder),
+                            sub = stringResource(R.string.on_phone),
+                            onClick = { onSaveToFolder(folder) },
+                        )
+                    }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .border(1.dp, OutlineDashed, RoundedCornerShape(14.dp))
+                            .padding(horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    ) {
+                        Icon(Icons.Default.CreateNewFolder, null, Modifier.size(22.dp), Green)
+                        Text(stringResource(R.string.folders_from_archive), fontSize = 14.5.sp, color = OnSurfaceFaint)
+                    }
+                }
+            }
+
+            ExportStage.BUSY -> {
+                Text(stringResource(R.string.saving), fontSize = 19.sp, color = OnSurface)
+                Text(
+                    "${pending.fileName}.pdf · ${pendingPageLabel(pending.pageCount, pending.scanMode.isTwoSided)}",
+                    fontSize = 13.sp,
+                    color = OnSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 20.dp),
+                )
+                LinearProgressIndicator(
+                    modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
+                    color = Green,
+                )
+                Spacer(Modifier.height(26.dp))
+            }
+
+            ExportStage.CLOSED -> Unit
+        }
         }
     }
 }

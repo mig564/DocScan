@@ -129,7 +129,6 @@
     <string name="no_folder_chosen">No folder chosen</string>
     <string name="internal_storage">Internal storage</string>
     <string name="one_a4_sheet">1 A4 sheet · both sides</string>
-    <string name="untitled_document">Untitled document</string>
     <string name="scan_default_name">Scan</string>
     <string name="identity_document">Identity document</string>
     <string name="document_prefix">Document · %1$s</string>
