@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.MoreVert
@@ -40,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import it.example.docscan.R
 import it.example.docscan.data.DocumentRecord
 import it.example.docscan.data.Folder as DocFolder
+import it.example.docscan.ui.BackButton
 import it.example.docscan.ui.PaperThumb
 import it.example.docscan.ui.SortField
 import it.example.docscan.ui.folderName
@@ -123,15 +123,7 @@ private fun TopBar(folder: DocFolder, count: Int, onBack: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Box(
-            modifier = Modifier
-                .size(44.dp)
-                .clip(RoundedCornerShape(22.dp))
-                .clickable(onClick = onBack),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), Modifier.size(23.dp), OnSurfaceStrong)
-        }
+        BackButton(onClick = onBack)
         Column(Modifier.weight(1f)) {
             Text(
                 text = folderName(folder),

@@ -39,7 +39,6 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CreateNewFolder
@@ -83,6 +82,7 @@ import it.example.docscan.R
 import it.example.docscan.data.FitMode
 import it.example.docscan.data.Folder as DocFolder
 import it.example.docscan.data.Images
+import it.example.docscan.ui.BackButton
 import it.example.docscan.ui.BottomSheet
 import it.example.docscan.ui.ExportStage
 import it.example.docscan.ui.PaperThumb
@@ -181,9 +181,9 @@ fun ReviewScreen(
 
     // Tastiera scesa del tutto: fuoco via, così il cursore smette di lampeggiare,
     // e "renaming" spento, che è quello che fa partire l'animazione della fascia.
-    // È l'unico punto in cui "renaming" si spegne: ci passano la freccia in alto,
-    // il back di sistema e la chiusura fatta a mano, quindi l'animazione è la
-    // stessa in tutti e tre i casi.
+    // Con una tastiera a schermo è l'unico punto in cui "renaming" si spegne: ci
+    // passano la freccia in alto, il back di sistema e il tasto d'invio, quindi
+    // l'animazione è la stessa in tutti e tre i casi.
     LaunchedEffect(imeVisible) {
         if (!imeVisible) {
             focus.clearFocus()
@@ -233,37 +233,32 @@ fun ReviewScreen(
                 contentAlignment = Alignment.Center,
             ) {
                 val fmt = pending?.scanMode?.format
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    when {
-                        pending == null -> Loading()
+                when {
+                    pending == null -> Loading()
 
-                        fmt != null -> Column(
+                    fmt != null -> Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp, vertical = 4.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        A4Preview(
+                            pageUris = pending.pageUris,
+                            format = fmt,
+                            fitMode = pending.fitMode,
                             modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 16.dp, vertical = 4.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            A4Preview(
-                                pageUris = pending.pageUris,
-                                format = fmt,
-                                fitMode = pending.fitMode,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .align(Alignment.CenterHorizontally),
-                            )
-                            Text(
-                                text = stringResource(R.string.a4_caption, fmt.label),
-                                fontSize = 11.sp,
-                                color = OnSurfaceFaint,
-                                modifier = Modifier.padding(top = 6.dp),
-                            )
-                        }
-
-                        else -> PagePreview(pending, busy)
+                                .weight(1f)
+                                .align(Alignment.CenterHorizontally),
+                        )
+                        Text(
+                            text = stringResource(R.string.a4_caption, fmt.label),
+                            fontSize = 11.sp,
+                            color = OnSurfaceFaint,
+                            modifier = Modifier.padding(top = 6.dp),
+                        )
                     }
+
+                    else -> PagePreview(pending, busy)
                 }
             }
 
@@ -338,9 +333,9 @@ fun ReviewScreen(
                 AnimatedVisibility(
                     visible = !renaming,
                     enter = expandVertically(tween(BandAnimationMillis)) +
-                            fadeIn(tween(BandAnimationMillis)),
+                        fadeIn(tween(BandAnimationMillis)),
                     exit = shrinkVertically(tween(BandAnimationMillis)) +
-                            fadeOut(tween(BandAnimationMillis)),
+                        fadeOut(tween(BandAnimationMillis)),
                 ) {
                     BottomActions(
                         enabled = !busy,
@@ -397,15 +392,7 @@ private fun TopBar(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Box(
-            modifier = Modifier
-                .size(44.dp)
-                .clip(RoundedCornerShape(22.dp))
-                .clickable(onClick = onBack),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), Modifier.size(23.dp), OnSurfaceStrong)
-        }
+        BackButton(onClick = onBack)
         Column(Modifier.weight(1f)) {
             Text(
                 text = stringResource(
@@ -755,20 +742,11 @@ private fun ExportSheet(
 
                 ExportStage.FOLDERS -> {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            Modifier
-                                .size(38.dp)
-                                .clip(RoundedCornerShape(19.dp))
-                                .clickable(onClick = onBackToDestinations),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.ArrowBack,
-                                stringResource(R.string.back),
-                                Modifier.size(21.dp),
-                                OnSurfaceStrong,
-                            )
-                        }
+                        BackButton(
+                            onClick = onBackToDestinations,
+                            size = 38.dp,
+                            iconSize = 21.dp,
+                        )
                         Spacer(Modifier.width(10.dp))
                         Column {
                             Text(stringResource(R.string.choose_folder), fontSize = 18.sp, color = OnSurface)

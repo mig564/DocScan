@@ -14,18 +14,24 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import it.example.docscan.R
 import it.example.docscan.data.DocKind
 import it.example.docscan.ui.theme.Green
 import it.example.docscan.ui.theme.OnSurfaceSoft
+import it.example.docscan.ui.theme.OnSurfaceStrong
 import it.example.docscan.ui.theme.Outline
 import it.example.docscan.ui.theme.PaperEdge
 import it.example.docscan.ui.theme.PaperInk
@@ -104,6 +110,37 @@ private fun Bar(fraction: Float, height: Dp, color: Color, align: Alignment.Hori
                 .fillMaxWidth(fraction)
                 .height(height)
                 .background(color),
+        )
+    }
+}
+
+/**
+ * Freccia indietro circolare, uguale in tutte le barre.
+ *
+ * Le misure sono parametri perché due punti la vogliono più piccola — la barra
+ * della selezione e il foglio di salvataggio — ma restano gli stessi 44.dp
+ * ovunque non venga detto il contrario: sotto quella soglia il bersaglio da
+ * toccare diventa scomodo.
+ */
+@Composable
+fun BackButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    size: Dp = 44.dp,
+    iconSize: Dp = 23.dp,
+) {
+    Box(
+        modifier = modifier
+            .size(size)
+            .clip(RoundedCornerShape(size / 2))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+            contentDescription = stringResource(R.string.back),
+            modifier = Modifier.size(iconSize),
+            tint = OnSurfaceStrong,
         )
     }
 }

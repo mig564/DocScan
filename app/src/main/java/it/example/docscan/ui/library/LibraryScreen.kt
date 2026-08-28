@@ -36,7 +36,6 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Close
@@ -76,6 +75,7 @@ import androidx.compose.ui.unit.sp
 import it.example.docscan.R
 import it.example.docscan.data.DocumentRecord
 import it.example.docscan.data.Folder as DocFolder
+import it.example.docscan.ui.BackButton
 import it.example.docscan.ui.FOLDER_RECENT
 import it.example.docscan.ui.FOLDER_SEARCH
 import it.example.docscan.ui.FilterPill
@@ -395,20 +395,11 @@ private fun SearchField(
             exit = shrinkHorizontally(tween(140)) + fadeOut(tween(90)),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(20.dp))
-                        .clickable(onClick = onExit),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.ArrowBack,
-                        stringResource(R.string.back),
-                        Modifier.size(22.dp),
-                        OnSurfaceStrong,
-                    )
-                }
+                BackButton(
+                    onClick = onExit,
+                    size = 40.dp,
+                    iconSize = 22.dp,
+                )
                 Spacer(Modifier.width(4.dp))
             }
         }

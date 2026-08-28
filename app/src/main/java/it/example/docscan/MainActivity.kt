@@ -119,212 +119,212 @@ class MainActivity : ComponentActivity() {
             val state by vm.state.collectAsStateWithLifecycle()
 
             WithLanguage(state.settings.language) {
-            DocScanTheme(themeMode = state.settings.themeMode) {
+                DocScanTheme(themeMode = state.settings.themeMode) {
 
-                // I toast del design sono transitori: si spengono da soli.
-                LaunchedEffect(state.toast) {
-                    if (state.toast != null) {
-                        delay(4.seconds)
-                        vm.consumeToast()
+                    // I toast del design sono transitori: si spengono da soli.
+                    LaunchedEffect(state.toast) {
+                        if (state.toast != null) {
+                            delay(4.seconds)
+                            vm.consumeToast()
+                        }
                     }
-                }
 
-                // L'Activity consuma la Uri e lancia l'intent: il ViewModel non
-                // ha bisogno di conoscere il Context dell'Activity.
-                LaunchedEffect(state.pendingShareUri) {
-                    state.pendingShareUri?.let {
-                        startShare(it.toUri())
-                        vm.consumeShare()
+                    // L'Activity consuma la Uri e lancia l'intent: il ViewModel non
+                    // ha bisogno di conoscere il Context dell'Activity.
+                    LaunchedEffect(state.pendingShareUri) {
+                        state.pendingShareUri?.let {
+                            startShare(it.toUri())
+                            vm.consumeShare()
+                        }
                     }
-                }
 
-                val canGoBack = state.query.isNotBlank() ||
-                    state.exportStage != ExportStage.CLOSED ||
-                    state.showScanModes ||
-                    state.renamingFolder != null ||
-                    state.creatingFolder ||
-                    state.movingDoc != null ||
-                    state.showSettings ||
-                    state.actionsFor != null ||
-                    state.renaming != null ||
-                    state.screen != Screen.LIBRARY
-                BackHandler(enabled = canGoBack) { vm.goBack() }
+                    val canGoBack = state.query.isNotBlank() ||
+                        state.exportStage != ExportStage.CLOSED ||
+                        state.showScanModes ||
+                        state.renamingFolder != null ||
+                        state.creatingFolder ||
+                        state.movingDoc != null ||
+                        state.showSettings ||
+                        state.actionsFor != null ||
+                        state.renaming != null ||
+                        state.screen != Screen.LIBRARY
+                    BackHandler(enabled = canGoBack) { vm.goBack() }
 
-                // La Surface riempie tutta la finestra, quindi il colore del
-                // tema arriva anche dietro la barra di stato: niente banda
-                // bianca in alto. L'inset lo prende solo il contenuto.
-                Surface(modifier = Modifier.fillMaxSize()) {
-                    Box(
-                        Modifier
-                            .fillMaxSize()
-                            // Solo le barre di sistema: la tastiera la gestisce
-                            // ogni schermata per conto suo, perché non tutte
-                            // devono spostare tutto il contenuto verso l'alto.
-                            .windowInsetsPadding(WindowInsets.systemBars)
-                            .consumeWindowInsets(WindowInsets.systemBars),
-                    ) {
-                    when (state.screen) {
-                        Screen.LIBRARY -> LibraryScreen(
-                            state = state,
-                            shelves = vm.shelves(state),
-                            onQueryChange = vm::setQuery,
-                            onFilterChange = vm::setFilter,
-                            onToggleEditing = vm::toggleEditing,
-                            onOpenDocument = vm::openDocument,
-                            onDeleteFolder = vm::deleteFolder,
-                            onMoveFolder = vm::moveFolder,
-                            onRenameFolder = vm::startFolderRename,
-                            onPurgeUnreadable = vm::purgeUnreadable,
-                            onCreateFolder = vm::startFolderCreate,
-                            onOpenSettings = vm::openSettings,
-                            onOpenFolder = vm::openFolder,
-                            onDocumentActions = vm::showActions,
-                            onScan = vm::openScanModes,
-                        )
-
-                        Screen.FOLDER -> {
-                            val folder = state.openFolder
-                            if (folder == null) {
-                                LaunchedEffect(Unit) { vm.backToLibrary() }
-                            } else {
-                                FolderScreen(
-                                    folder = folder,
-                                    documents = vm.folderDocuments(state),
-                                    sortField = state.sortField,
-                                    sortAscending = state.sortAscending,
-                                    onBack = vm::closeFolder,
-                                    onSortFieldChange = vm::setSortField,
-                                    onToggleDirection = vm::toggleSortDirection,
+                    // La Surface riempie tutta la finestra, quindi il colore del
+                    // tema arriva anche dietro la barra di stato: niente banda
+                    // bianca in alto. L'inset lo prende solo il contenuto.
+                    Surface(modifier = Modifier.fillMaxSize()) {
+                        Box(
+                            Modifier
+                                .fillMaxSize()
+                                // Solo le barre di sistema: la tastiera la gestisce
+                                // ogni schermata per conto suo, perché non tutte
+                                // devono spostare tutto il contenuto verso l'alto.
+                                .windowInsetsPadding(WindowInsets.systemBars)
+                                .consumeWindowInsets(WindowInsets.systemBars),
+                        ) {
+                            when (state.screen) {
+                                Screen.LIBRARY -> LibraryScreen(
+                                    state = state,
+                                    shelves = vm.shelves(state),
+                                    onQueryChange = vm::setQuery,
+                                    onFilterChange = vm::setFilter,
+                                    onToggleEditing = vm::toggleEditing,
                                     onOpenDocument = vm::openDocument,
+                                    onDeleteFolder = vm::deleteFolder,
+                                    onMoveFolder = vm::moveFolder,
+                                    onRenameFolder = vm::startFolderRename,
+                                    onPurgeUnreadable = vm::purgeUnreadable,
+                                    onCreateFolder = vm::startFolderCreate,
+                                    onOpenSettings = vm::openSettings,
+                                    onOpenFolder = vm::openFolder,
                                     onDocumentActions = vm::showActions,
+                                    onScan = vm::openScanModes,
                                 )
-                            }
-                        }
 
-                        Screen.REVIEW -> ReviewScreen(
-                            pending = state.pending,
-                            busy = state.busy,
-                            exportStage = state.exportStage,
-                            folders = state.folders,
-                            onBack = vm::discardScan,
-                            onFileNameChange = vm::setFileName,
-                            onOpenExport = vm::openExport,
-                            onCloseExport = vm::closeExport,
-                            onShowFolders = vm::showFolderPicker,
-                            onBackToDestinations = vm::backToDestinations,
-                            onSaveToFolder = vm::saveToFolder,
-                            onShare = vm::shareScan,
-                            onFitModeChange = vm::setFitMode,
-                            captureLabel = if (state.scanMode.isTwoSided &&
-                                !vm.bothSidesCaptured(state)
-                            ) getString(R.string.scan_back) else null,
-                            onExportExternal = {
-                                val saved = vm.defaultFolderUri()
-                                if (saved != null) vm.exportToDefaultFolder(saved.toUri())
-                                else exportLauncher.launch(vm.exportFileName())
-                            },
-                            onSelectPage = vm::selectPage,
-                            onRemovePage = vm::removePage,
-                            onAddPages = ::startScan,
-                        )
+                                Screen.FOLDER -> {
+                                    val folder = state.openFolder
+                                    if (folder == null) {
+                                        LaunchedEffect(Unit) { vm.backToLibrary() }
+                                    } else {
+                                        FolderScreen(
+                                            folder = folder,
+                                            documents = vm.folderDocuments(state),
+                                            sortField = state.sortField,
+                                            sortAscending = state.sortAscending,
+                                            onBack = vm::closeFolder,
+                                            onSortFieldChange = vm::setSortField,
+                                            onToggleDirection = vm::toggleSortDirection,
+                                            onOpenDocument = vm::openDocument,
+                                            onDocumentActions = vm::showActions,
+                                        )
+                                    }
+                                }
 
-                        Screen.DETAIL -> {
-                            val doc = state.openDoc
-                            if (doc == null) {
-                                LaunchedEffect(Unit) { vm.backToLibrary() }
-                            } else {
-                                DetailScreen(
-                                    record = doc,
-                                    toast = state.toast,
-                                    loadPage = { index -> vm.pageBitmap(doc, index) },
-                                    onBack = vm::goBack,
-                                    onFieldChange = { i, value -> vm.updateField(doc, i, value) },
-                                    onFieldAdd = { l, v -> vm.addField(doc, l, v) },
-                                    onFieldRemove = { i -> vm.removeField(doc, i) },
-                                    onDelete = { vm.deleteDocument(doc) },
-                                    onShare = { vm.shareDocument(doc) },
-                                    onCopyAll = { vm.copyAllText(doc) },
-                                    onConfirmAll = { vm.confirmAllFields(doc) },
+                                Screen.REVIEW -> ReviewScreen(
+                                    pending = state.pending,
+                                    busy = state.busy,
+                                    exportStage = state.exportStage,
+                                    folders = state.folders,
+                                    onBack = vm::discardScan,
+                                    onFileNameChange = vm::setFileName,
+                                    onOpenExport = vm::openExport,
+                                    onCloseExport = vm::closeExport,
+                                    onShowFolders = vm::showFolderPicker,
+                                    onBackToDestinations = vm::backToDestinations,
+                                    onSaveToFolder = vm::saveToFolder,
+                                    onShare = vm::shareScan,
+                                    onFitModeChange = vm::setFitMode,
+                                    captureLabel = if (state.scanMode.isTwoSided &&
+                                        !vm.bothSidesCaptured(state)
+                                    ) getString(R.string.scan_back) else null,
+                                    onExportExternal = {
+                                        val saved = vm.defaultFolderUri()
+                                        if (saved != null) vm.exportToDefaultFolder(saved.toUri())
+                                        else exportLauncher.launch(vm.exportFileName())
+                                    },
+                                    onSelectPage = vm::selectPage,
+                                    onRemovePage = vm::removePage,
+                                    onAddPages = ::startScan,
                                 )
+
+                                Screen.DETAIL -> {
+                                    val doc = state.openDoc
+                                    if (doc == null) {
+                                        LaunchedEffect(Unit) { vm.backToLibrary() }
+                                    } else {
+                                        DetailScreen(
+                                            record = doc,
+                                            toast = state.toast,
+                                            loadPage = { index -> vm.pageBitmap(doc, index) },
+                                            onBack = vm::goBack,
+                                            onFieldChange = { i, value -> vm.updateField(doc, i, value) },
+                                            onFieldAdd = { l, v -> vm.addField(doc, l, v) },
+                                            onFieldRemove = { i -> vm.removeField(doc, i) },
+                                            onDelete = { vm.deleteDocument(doc) },
+                                            onShare = { vm.shareDocument(doc) },
+                                            onCopyAll = { vm.copyAllText(doc) },
+                                            onConfirmAll = { vm.confirmAllFields(doc) },
+                                        )
+                                    }
+                                }
                             }
-                        }
                         }
                     }
-                }
 
-                state.renamingFolder?.let { folder ->
-                    NameDialog(
-                        title = stringResource(R.string.rename_folder_action),
-                        initial = folderName(folder),
-                        validate = { vm.folderNameError(it, exceptId = folder.id) },
-                        onConfirm = { vm.renameFolder(folder, it) },
-                        onDismiss = vm::cancelFolderRename,
-                    )
-                }
+                    state.renamingFolder?.let { folder ->
+                        NameDialog(
+                            title = stringResource(R.string.rename_folder_action),
+                            initial = folderName(folder),
+                            validate = { vm.folderNameError(it, exceptId = folder.id) },
+                            onConfirm = { vm.renameFolder(folder, it) },
+                            onDismiss = vm::cancelFolderRename,
+                        )
+                    }
 
-                if (state.creatingFolder) {
-                    NameDialog(
-                        title = stringResource(R.string.new_folder),
-                        initial = "",
-                        confirmLabel = stringResource(R.string.add),
-                        validate = { vm.folderNameError(it) },
-                        onConfirm = vm::createFolder,
-                        onDismiss = vm::cancelFolderCreate,
-                    )
-                }
+                    if (state.creatingFolder) {
+                        NameDialog(
+                            title = stringResource(R.string.new_folder),
+                            initial = "",
+                            confirmLabel = stringResource(R.string.add),
+                            validate = { vm.folderNameError(it) },
+                            onConfirm = vm::createFolder,
+                            onDismiss = vm::cancelFolderCreate,
+                        )
+                    }
 
-                state.movingDoc?.let { doc ->
-                    FolderPickerSheet(
-                        title = stringResource(R.string.move_to),
-                        subtitle = doc.title,
-                        folders = state.folders,
-                        currentFolderId = doc.folderId,
-                        onPick = { vm.moveDocument(doc, it) },
-                        onDismiss = vm::cancelMove,
-                    )
-                }
+                    state.movingDoc?.let { doc ->
+                        FolderPickerSheet(
+                            title = stringResource(R.string.move_to),
+                            subtitle = doc.title,
+                            folders = state.folders,
+                            currentFolderId = doc.folderId,
+                            onPick = { vm.moveDocument(doc, it) },
+                            onDismiss = vm::cancelMove,
+                        )
+                    }
 
-                if (state.showScanModes) {
-                    ScanModeSheet(
-                        selected = state.scanMode,
-                        onSelect = vm::setScanMode,
-                        onStart = { vm.closeScanModes(); startScan() },
-                        onDismiss = vm::closeScanModes,
-                        buttonLabel = vm.scanButtonLabel(state),
-                        stepLabel = vm.scanStepLabel(state),
-                    )
-                }
+                    if (state.showScanModes) {
+                        ScanModeSheet(
+                            selected = state.scanMode,
+                            onSelect = vm::setScanMode,
+                            onStart = { vm.closeScanModes(); startScan() },
+                            onDismiss = vm::closeScanModes,
+                            buttonLabel = vm.scanButtonLabel(state),
+                            stepLabel = vm.scanStepLabel(state),
+                        )
+                    }
 
-                state.actionsFor?.let { doc ->
-                    DocumentActionsSheet(
-                        record = doc,
-                        onRename = { vm.startRename(doc) },
-                        onMove = { vm.startMove(doc) },
-                        onShare = { vm.shareDocument(doc) },
-                        onDelete = { vm.deleteDocument(doc) },
-                        onDismiss = vm::hideActions,
-                    )
-                }
+                    state.actionsFor?.let { doc ->
+                        DocumentActionsSheet(
+                            record = doc,
+                            onRename = { vm.startRename(doc) },
+                            onMove = { vm.startMove(doc) },
+                            onShare = { vm.shareDocument(doc) },
+                            onDelete = { vm.deleteDocument(doc) },
+                            onDismiss = vm::hideActions,
+                        )
+                    }
 
-                state.renaming?.let { doc ->
-                    RenameDialog(
-                        record = doc,
-                        onConfirm = { vm.renameDocument(doc, it) },
-                        onDismiss = vm::cancelRename,
-                    )
-                }
+                    state.renaming?.let { doc ->
+                        RenameDialog(
+                            record = doc,
+                            onConfirm = { vm.renameDocument(doc, it) },
+                            onDismiss = vm::cancelRename,
+                        )
+                    }
 
-                if (state.showSettings) {
-                    SettingsSheet(
-                        settings = state.settings,
-                        onThemeChange = vm::setThemeMode,
-                        onLanguageChange = vm::setLanguage,
-                        onPickFolder = { folderLauncher.launch(null) },
-                        onClearFolder = vm::clearDefaultFolder,
-                        onDismiss = vm::closeSettings,
-                    )
+                    if (state.showSettings) {
+                        SettingsSheet(
+                            settings = state.settings,
+                            onThemeChange = vm::setThemeMode,
+                            onLanguageChange = vm::setLanguage,
+                            onPickFolder = { folderLauncher.launch(null) },
+                            onClearFolder = vm::clearDefaultFolder,
+                            onDismiss = vm::closeSettings,
+                        )
+                    }
                 }
-            }
             }
         }
     }

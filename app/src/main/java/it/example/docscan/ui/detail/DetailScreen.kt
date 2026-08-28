@@ -30,7 +30,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
@@ -69,6 +68,7 @@ import androidx.compose.ui.unit.sp
 import it.example.docscan.R
 import it.example.docscan.data.DocumentRecord
 import it.example.docscan.data.FitMode
+import it.example.docscan.ui.BackButton
 import it.example.docscan.ui.PaperThumb
 import it.example.docscan.ui.fieldLabel
 import it.example.docscan.ui.pageLabel
@@ -160,15 +160,7 @@ private fun DetailTopBar(record: DocumentRecord, onBack: () -> Unit, onShare: ()
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Box(
-            modifier = Modifier
-                .size(44.dp)
-                .clip(RoundedCornerShape(22.dp))
-                .clickable(onClick = onBack),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back), Modifier.size(23.dp), OnSurfaceStrong)
-        }
+        BackButton(onClick = onBack)
         Column(Modifier.weight(1f)) {
             Text(
                 text = record.title,
