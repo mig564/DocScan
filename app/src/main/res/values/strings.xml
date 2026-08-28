@@ -20,7 +20,7 @@
 
     <!-- Libreria -->
     <string name="library_title">Documenti</string>
-    <string name="library_subtitle">%1$s · %2$s · solo su questo telefono</string>
+    <string name="library_subtitle">%1$s · %2$s</string>
     <plurals name="scan_count">
         <item quantity="one">%d scansione</item>
         <item quantity="other">%d scansioni</item>

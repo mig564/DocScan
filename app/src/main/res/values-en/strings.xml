@@ -2,7 +2,7 @@
 <!-- English UI text. Same keys as values/strings.xml. -->
 <resources>
     <string name="library_title">Documents</string>
-    <string name="library_subtitle">%1$s · %2$s · this phone only</string>
+    <string name="library_subtitle">%1$s · %2$s</string>
     <string name="search_hint">Search scans</string>
     <string name="filter_all">All</string>
     <string name="shelf_recent">Recent scans</string>

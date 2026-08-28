@@ -52,6 +52,10 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -125,9 +129,23 @@ fun LibraryScreen(
 ) {
     val totalPages = state.records.sumOf { it.pageCount }
     // Vero quando la tastiera occupa spazio: l'inset è l'unica fonte attendibile.
-    val imeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    // Letto dentro un derivedStateOf perché durante l'animazione cambia a ogni
+    // fotogramma: letto direttamente ricomporrebbe l'intera schermata sessanta
+    // volte al secondo per una risposta che è sempre la stessa.
+    val ime = WindowInsets.ime
+    val density = LocalDensity.current
+    val imeVisible by remember(ime, density) {
+        derivedStateOf { ime.getBottom(density) > 0 }
+    }
     val focus = LocalFocusManager.current
     val keyboard = LocalSoftwareKeyboardController.current
+
+    // Chiusa la tastiera — con la freccia indietro, con lo swipe, in qualunque
+    // modo — il campo non deve restare acceso: senza questo il cursore continua
+    // a lampeggiare in una barra in cui non sta scrivendo più nessuno.
+    LaunchedEffect(imeVisible) {
+        if (!imeVisible) focus.clearFocus()
+    }
 
     // Modalità ricerca: la barra prende il posto del titolo. Vale anche a
     // campo vuoto, perché basta toccarlo per volerla usare.
