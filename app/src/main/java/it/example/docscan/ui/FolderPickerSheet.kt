@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -28,15 +27,18 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import it.example.docscan.R
 import it.example.docscan.data.Folder
-import it.example.docscan.ui.theme.Green
-import it.example.docscan.ui.theme.GreenContainer
-import it.example.docscan.ui.theme.OnGreenContainer
+import it.example.docscan.ui.theme.Accent
+import it.example.docscan.ui.theme.AccentContainer
+import it.example.docscan.ui.theme.CornerMedium
+import it.example.docscan.ui.theme.OnAccentContainer
 import it.example.docscan.ui.theme.OnSurface
 import it.example.docscan.ui.theme.OnSurfaceVariant
 import it.example.docscan.ui.theme.SurfaceContainer
+import it.example.docscan.ui.theme.TextBody
+import it.example.docscan.ui.theme.TextLabel
+import it.example.docscan.ui.theme.TextTitle
 
 /**
  * Selettore di cartella, per spostare un documento già salvato.
@@ -56,10 +58,10 @@ fun FolderPickerSheet(
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 24.dp),
     ) {
 
-            Text(title, fontSize = 18.sp, color = OnSurface)
+            Text(title, fontSize = TextTitle, color = OnSurface)
             Text(
                 text = subtitle,
-                fontSize = 12.5.sp,
+                fontSize = TextLabel,
                 color = OnSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -78,8 +80,8 @@ fun FolderPickerSheet(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp)
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(if (isCurrent) GreenContainer else SurfaceContainer)
+                            .clip(CornerMedium)
+                            .background(if (isCurrent) AccentContainer else SurfaceContainer)
                             .then(
                                 if (isCurrent) Modifier
                                 else Modifier.clickable { onPick(folder) },
@@ -92,13 +94,13 @@ fun FolderPickerSheet(
                             imageVector = Icons.Default.Folder,
                             contentDescription = null,
                             modifier = Modifier.size(22.dp),
-                            tint = if (isCurrent) OnGreenContainer else Green,
+                            tint = if (isCurrent) OnAccentContainer else Accent,
                         )
                         Text(
                             text = folderName(folder),
-                            fontSize = 14.5.sp,
+                            fontSize = TextBody,
                             fontWeight = FontWeight.Medium,
-                            color = if (isCurrent) OnGreenContainer else OnSurface,
+                            color = if (isCurrent) OnAccentContainer else OnSurface,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f),
@@ -108,7 +110,7 @@ fun FolderPickerSheet(
                                 Icons.Default.Check,
                                 stringResource(R.string.current_folder),
                                 Modifier.size(19.dp),
-                                OnGreenContainer,
+                                OnAccentContainer,
                             )
                         }
                     }

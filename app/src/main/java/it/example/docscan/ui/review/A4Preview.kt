@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -36,20 +35,24 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import it.example.docscan.R
 import it.example.docscan.data.A4Composer
 import it.example.docscan.data.CardFormat
 import it.example.docscan.data.FitMode
-import it.example.docscan.ui.theme.Green
-import it.example.docscan.ui.theme.GreenContainer
-import it.example.docscan.ui.theme.OnGreenContainer
+import it.example.docscan.ui.theme.Accent
+import it.example.docscan.ui.theme.AccentContainer
+import it.example.docscan.ui.theme.CornerMedium
+import it.example.docscan.ui.theme.CornerSmall
+import it.example.docscan.ui.theme.OnAccentContainer
 import it.example.docscan.ui.theme.OnSurfaceFaint
 import it.example.docscan.ui.theme.OnSurfaceStrong
 import it.example.docscan.ui.theme.OnSurfaceVariant
 import it.example.docscan.ui.theme.Outline
 import it.example.docscan.ui.theme.OutlineDashed
 import it.example.docscan.ui.theme.PaperEdge
+import it.example.docscan.ui.theme.TextBody
+import it.example.docscan.ui.theme.TextLabel
+import it.example.docscan.ui.theme.TextMeta
 
 /**
  * Foglio A4 vuoto, con i due riquadri delle facciate al posto giusto.
@@ -77,9 +80,9 @@ fun A4Sheet(
     Column(
         modifier = modifier
             .aspectRatio(A4Composer.a4AspectRatio)
-            .clip(RoundedCornerShape(3.dp))
+            .clip(CornerSmall)
             .background(Color.White)
-            .border(1.dp, PaperEdge, RoundedCornerShape(3.dp)),
+            .border(1.dp, PaperEdge, CornerSmall),
     ) {
         var cursor = 0f
         slots.forEachIndexed { index, r ->
@@ -109,12 +112,12 @@ fun A4Preview(
             SlotImage(uri, fitMode)
         } else {
             Box(
-                Modifier.fillMaxSize().border(1.dp, OutlineDashed, RoundedCornerShape(2.dp)),
+                Modifier.fillMaxSize().border(1.dp, OutlineDashed, CornerSmall),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = if (index == 0) stringResource(R.string.front) else stringResource(R.string.back_side),
-                    fontSize = 11.sp,
+                    fontSize = TextMeta,
                     color = OnSurfaceFaint,
                 )
             }
@@ -149,7 +152,7 @@ private fun SlotImage(uri: Uri, fitMode: FitMode) {
             // proporzione la garantisce ContentScale, non la misura.
             modifier = Modifier
                 .fillMaxSize()
-                .clip(RoundedCornerShape(2.dp))
+                .clip(CornerSmall)
                 .background(Color.White),
         )
     } else {
@@ -169,24 +172,24 @@ fun FitModeSelector(selected: FitMode, onSelect: (FitMode) -> Unit, modifier: Mo
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .clip(RoundedCornerShape(12.dp))
+                    .clip(CornerMedium)
                     .then(
-                        if (active) Modifier.background(GreenContainer)
-                        else Modifier.border(1.dp, Outline, RoundedCornerShape(12.dp)),
+                        if (active) Modifier.background(AccentContainer)
+                        else Modifier.border(1.dp, Outline, CornerMedium),
                     )
                     .clickable { onSelect(mode) }
                     .padding(horizontal = 12.dp, vertical = 10.dp),
             ) {
                 Text(
                     text = stringResource(mode.labelRes),
-                    fontSize = 13.sp,
+                    fontSize = TextLabel,
                     fontWeight = if (active) FontWeight.Medium else FontWeight.Normal,
-                    color = if (active) OnGreenContainer else OnSurfaceStrong,
+                    color = if (active) OnAccentContainer else OnSurfaceStrong,
                 )
                 Text(
                     text = stringResource(mode.descriptionRes),
-                    fontSize = 11.sp,
-                    color = if (active) OnGreenContainer else OnSurfaceVariant,
+                    fontSize = TextMeta,
+                    color = if (active) OnAccentContainer else OnSurfaceVariant,
                 )
             }
         }
@@ -200,12 +203,12 @@ fun CaptureBackButton(label: String, onClick: () -> Unit, modifier: Modifier = M
         modifier = modifier
             .fillMaxWidth()
             .height(48.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .border(1.dp, Green, RoundedCornerShape(14.dp))
+            .clip(CornerMedium)
+            .border(1.dp, Accent, CornerMedium)
             .clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
     ) {
-        Text(label, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Green)
+        Text(label, fontSize = TextBody, fontWeight = FontWeight.Medium, color = Accent)
     }
 }

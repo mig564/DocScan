@@ -113,6 +113,10 @@
     <string name="current_folder">Current folder</string>
     <string name="document_pdf">%1$s · PDF</string>
     <string name="appearance">APPEARANCE</string>
+    <string name="accent_color">COLOUR</string>
+    <string name="card_style">CARDS</string>
+    <string name="card_style_rounded">Rounded</string>
+    <string name="card_style_underlined">Underlined</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
     <string name="theme_system">System</string>
@@ -125,7 +129,6 @@
     <string name="pick_folder_hint">Tap to pick a fixed one</string>
     <string name="change_folder_hint">Tap to change it</string>
     <string name="reset">Reset</string>
-    <string name="folder_note">Android cannot store a path: what is saved is permission on the folder you pick, and it stays valid until you revoke it or uninstall the app.</string>
     <string name="no_folder_chosen">No folder chosen</string>
     <string name="internal_storage">Internal storage</string>
     <string name="one_a4_sheet">1 A4 sheet · both sides</string>

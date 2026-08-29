@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -48,11 +47,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import it.example.docscan.R
 import it.example.docscan.data.DocumentRecord
+import it.example.docscan.ui.theme.CornerMedium
+import it.example.docscan.ui.theme.CornerRound
 import it.example.docscan.ui.theme.DangerText
-import it.example.docscan.ui.theme.Green
+import it.example.docscan.ui.theme.Accent
+import it.example.docscan.ui.theme.OnAccent
 import it.example.docscan.ui.theme.OnSurface
 import it.example.docscan.ui.theme.OnSurfaceStrong
 import it.example.docscan.ui.theme.OnSurfaceVariant
@@ -60,6 +61,9 @@ import it.example.docscan.ui.theme.Outline
 import it.example.docscan.ui.theme.Scrim
 import it.example.docscan.ui.theme.Surface
 import it.example.docscan.ui.theme.SurfaceContainer
+import it.example.docscan.ui.theme.TextBody
+import it.example.docscan.ui.theme.TextLabel
+import it.example.docscan.ui.theme.TextSubtitle
 
 /**
  * Menu che compare tenendo premuto su un documento. Bottom sheet e non menu
@@ -81,7 +85,7 @@ fun DocumentActionsSheet(
 
             Text(
                 text = record.title,
-                fontSize = 16.sp,
+                fontSize = TextSubtitle,
                 fontWeight = FontWeight.Medium,
                 color = OnSurface,
                 maxLines = 1,
@@ -89,16 +93,16 @@ fun DocumentActionsSheet(
             )
             Text(
                 text = stringResource(R.string.document_pdf, record.pageLabel()),
-                fontSize = 12.5.sp,
+                fontSize = TextLabel,
                 color = OnSurfaceVariant,
                 modifier = Modifier.padding(bottom = 14.dp),
             )
 
-            ActionRow(Icons.Default.Edit, stringResource(R.string.rename), Green, onRename)
+            ActionRow(Icons.Default.Edit, stringResource(R.string.rename), Accent, onRename)
             Spacer(Modifier.height(6.dp))
-            ActionRow(Icons.AutoMirrored.Filled.DriveFileMove, stringResource(R.string.move_to_folder), Green, onMove)
+            ActionRow(Icons.AutoMirrored.Filled.DriveFileMove, stringResource(R.string.move_to_folder), Accent, onMove)
             Spacer(Modifier.height(6.dp))
-            ActionRow(Icons.Default.Share, stringResource(R.string.share), Green, onShare)
+            ActionRow(Icons.Default.Share, stringResource(R.string.share), Accent, onShare)
             Spacer(Modifier.height(6.dp))
             ActionRow(Icons.Default.Delete, stringResource(R.string.delete), DangerText, onDelete)
     }
@@ -111,7 +115,7 @@ private fun ActionRow(icon: ImageVector, label: String, tint: androidx.compose.u
         modifier = Modifier
             .fillMaxWidth()
             .height(54.dp)
-            .clip(RoundedCornerShape(14.dp))
+            .clip(CornerMedium)
             .background(SurfaceContainer)
             .clickable(onClick = onClick)
             .padding(horizontal = 16.dp),
@@ -119,7 +123,7 @@ private fun ActionRow(icon: ImageVector, label: String, tint: androidx.compose.u
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Icon(icon, null, Modifier.size(21.dp), tint)
-        Text(label, fontSize = 14.5.sp, fontWeight = FontWeight.Medium, color = tint)
+        Text(label, fontSize = TextBody, fontWeight = FontWeight.Medium, color = tint)
     }
 }
 
@@ -167,7 +171,7 @@ fun NameDialog(
             modifier = Modifier
                 .padding(horizontal = 28.dp)
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(20.dp))
+                .clip(CornerRound)
                 .background(Surface)
                 // Consuma i tocchi: altrimenti un tap sulla scheda arriva allo
                 // scrim sottostante e chiude il dialogo.
@@ -182,14 +186,14 @@ fun NameDialog(
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp),
         ) {
-            Text(title, fontSize = 17.sp, fontWeight = FontWeight.Medium, color = OnSurface)
+            Text(title, fontSize = TextSubtitle, fontWeight = FontWeight.Medium, color = OnSurface)
             Spacer(Modifier.height(14.dp))
 
             Box(
                 Modifier
                     .fillMaxWidth()
                     .height(50.dp)
-                    .clip(RoundedCornerShape(12.dp))
+                    .clip(CornerMedium)
                     .background(SurfaceContainer)
                     .padding(horizontal = 14.dp),
                 contentAlignment = Alignment.CenterStart,
@@ -203,8 +207,8 @@ fun NameDialog(
                         val problem = validate(draft)
                         if (problem != null) error = problem else onConfirm(draft)
                     }),
-                    textStyle = TextStyle(fontSize = 15.sp, color = OnSurface),
-                    cursorBrush = SolidColor(Green),
+                    textStyle = TextStyle(fontSize = TextBody, color = OnSurface),
+                    cursorBrush = SolidColor(Accent),
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -212,7 +216,7 @@ fun NameDialog(
             // Spazio riservato: il dialogo non deve cambiare altezza quando
             // l'errore compare.
             Box(Modifier.fillMaxWidth().height(26.dp), contentAlignment = Alignment.CenterStart) {
-                error?.let { Text(it, fontSize = 12.sp, color = DangerText) }
+                error?.let { Text(it, fontSize = TextLabel, color = DangerText) }
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -220,19 +224,19 @@ fun NameDialog(
                     modifier = Modifier
                         .weight(1f)
                         .height(46.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .border(1.dp, Outline, RoundedCornerShape(12.dp))
+                        .clip(CornerMedium)
+                        .border(1.dp, Outline, CornerMedium)
                         .clickable(onClick = onDismiss),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(stringResource(R.string.cancel), fontSize = 14.sp, color = OnSurfaceStrong)
+                    Text(stringResource(R.string.cancel), fontSize = TextBody, color = OnSurfaceStrong)
                 }
                 Box(
                     modifier = Modifier
                         .weight(1f)
                         .height(46.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Green)
+                        .clip(CornerMedium)
+                        .background(Accent)
                         .clickable {
                             val problem = validate(draft)
                             if (problem != null) error = problem else onConfirm(draft)
@@ -241,9 +245,9 @@ fun NameDialog(
                 ) {
                     Text(
                         confirmLabel,
-                        fontSize = 14.sp,
+                        fontSize = TextBody,
                         fontWeight = FontWeight.Medium,
-                        color = androidx.compose.ui.graphics.Color.White,
+                        color = OnAccent,
                     )
                 }
             }

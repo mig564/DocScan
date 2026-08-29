@@ -33,7 +33,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -77,7 +76,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import it.example.docscan.R
 import it.example.docscan.data.FitMode
 import it.example.docscan.data.Folder as DocFolder
@@ -89,8 +87,11 @@ import it.example.docscan.ui.PaperThumb
 import it.example.docscan.ui.PendingScan
 import it.example.docscan.ui.folderName
 import it.example.docscan.ui.pendingPageLabel
+import it.example.docscan.ui.theme.CornerMedium
+import it.example.docscan.ui.theme.CornerSmall
 import it.example.docscan.ui.theme.DangerText
-import it.example.docscan.ui.theme.Green
+import it.example.docscan.ui.theme.Accent
+import it.example.docscan.ui.theme.OnAccent
 import it.example.docscan.ui.theme.OnSurface
 import it.example.docscan.ui.theme.OnSurfaceFaint
 import it.example.docscan.ui.theme.OnSurfaceStrong
@@ -101,6 +102,11 @@ import it.example.docscan.ui.theme.OutlineSoft
 import it.example.docscan.ui.theme.Surface
 import it.example.docscan.ui.theme.SurfaceContainer
 import it.example.docscan.ui.theme.SurfaceDim
+import it.example.docscan.ui.theme.TextBody
+import it.example.docscan.ui.theme.TextLabel
+import it.example.docscan.ui.theme.TextMeta
+import it.example.docscan.ui.theme.TextSubtitle
+import it.example.docscan.ui.theme.TextTitle
 import java.util.Locale
 
 // Altezze della fascia in fondo, dichiarate qui e non misurate a runtime.
@@ -252,7 +258,7 @@ fun ReviewScreen(
                         )
                         Text(
                             text = stringResource(R.string.a4_caption, fmt.label),
-                            fontSize = 11.sp,
+                            fontSize = TextMeta,
                             color = OnSurfaceFaint,
                             modifier = Modifier.padding(top = 6.dp),
                         )
@@ -370,8 +376,8 @@ private fun Loading() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        CircularProgressIndicator(color = Green)
-        Text(stringResource(R.string.review_reading), fontSize = 13.sp, color = OnSurfaceVariant)
+        CircularProgressIndicator(color = Accent)
+        Text(stringResource(R.string.review_reading), fontSize = TextLabel, color = OnSurfaceVariant)
     }
 }
 
@@ -398,7 +404,7 @@ private fun TopBar(
                 text = stringResource(
                     if (renaming) R.string.rename_file else R.string.review_title,
                 ),
-                fontSize = 17.sp,
+                fontSize = TextSubtitle,
                 fontWeight = FontWeight.Medium,
                 color = OnSurface,
             )
@@ -409,7 +415,7 @@ private fun TopBar(
                         busy -> stringResource(R.string.review_rereading, pendingPageLabel(pending.pageCount, pending.scanMode.isTwoSided))
                         else -> stringResource(R.string.review_enhanced, pendingPageLabel(pending.pageCount, pending.scanMode.isTwoSided))
                     },
-                    fontSize = 12.sp,
+                    fontSize = TextLabel,
                     color = OnSurfaceVariant,
                 )
             }
@@ -440,7 +446,7 @@ private fun PagePreview(pending: PendingScan, busy: Boolean) {
                 .padding(vertical = 8.dp)
                 .fillMaxHeight(0.96f)
                 .aspectRatio(ratio)
-                .clip(RoundedCornerShape(5.dp))
+                .clip(CornerSmall)
                 .background(Color.White),
             contentAlignment = Alignment.Center,
         ) {
@@ -463,13 +469,13 @@ private fun PagePreview(pending: PendingScan, busy: Boolean) {
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(top = 20.dp, end = 6.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xCC1B1C19))
+                    .clip(CornerMedium)
+                    .background(Color(0xCC20201E))
                     .padding(horizontal = 9.dp, vertical = 4.dp),
             ) {
                 Text(
                     text = "${pending.selectedPage + 1} / ${pending.pageCount}",
-                    fontSize = 11.sp,
+                    fontSize = TextMeta,
                     fontFamily = FontFamily.Monospace,
                     color = Color.White,
                 )
@@ -478,7 +484,7 @@ private fun PagePreview(pending: PendingScan, busy: Boolean) {
 
         if (busy) {
             CircularProgressIndicator(
-                color = Green,
+                color = Accent,
                 modifier = Modifier.align(Alignment.BottomCenter).size(22.dp),
             )
         }
@@ -509,14 +515,14 @@ private fun PageStrip(pending: PendingScan, onSelectPage: (Int) -> Unit, onAddPa
                 Box(
                     modifier = Modifier
                         .size(width = 46.dp, height = 60.dp)
-                        .clip(RoundedCornerShape(5.dp))
-                        .border(1.dp, OutlineDashed, RoundedCornerShape(5.dp))
+                        .clip(CornerSmall)
+                        .border(1.dp, OutlineDashed, CornerSmall)
                         .clickable(onClick = onAddPages),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(Icons.Default.Add, stringResource(R.string.add_pages), Modifier.size(22.dp), Green)
+                    Icon(Icons.Default.Add, stringResource(R.string.add_pages), Modifier.size(22.dp), Accent)
                 }
-                Text(stringResource(R.string.add), fontSize = 10.sp, color = Green)
+                Text(stringResource(R.string.add), fontSize = TextMeta, color = Accent)
             }
         }
     }
@@ -542,12 +548,12 @@ private fun PageThumb(index: Int, selected: Boolean, pending: PendingScan, onCli
         Box(
             modifier = Modifier
                 .size(width = 46.dp, height = 60.dp)
-                .clip(RoundedCornerShape(5.dp))
+                .clip(CornerSmall)
                 .background(Color.White)
                 .border(
                     width = if (selected) 2.dp else 1.dp,
-                    color = if (selected) Green else Outline,
-                    shape = RoundedCornerShape(5.dp),
+                    color = if (selected) Accent else Outline,
+                    shape = CornerSmall,
                 )
                 .clickable(onClick = onClick),
             contentAlignment = Alignment.Center,
@@ -563,9 +569,9 @@ private fun PageThumb(index: Int, selected: Boolean, pending: PendingScan, onCli
         }
         Text(
             text = "${index + 1}",
-            fontSize = 10.sp,
+            fontSize = TextMeta,
             fontFamily = FontFamily.Monospace,
-            color = if (selected) Green else OnSurfaceFaint,
+            color = if (selected) Accent else OnSurfaceFaint,
         )
     }
 }
@@ -584,7 +590,7 @@ private fun PageActions(pending: PendingScan, onRemovePage: (Int) -> Unit) {
         Row(
             modifier = Modifier
                 .height(32.dp)
-                .clip(RoundedCornerShape(8.dp))
+                .clip(CornerMedium)
                 .clickable { onRemovePage(pending.selectedPage) }
                 .padding(horizontal = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -593,7 +599,7 @@ private fun PageActions(pending: PendingScan, onRemovePage: (Int) -> Unit) {
             Icon(Icons.Default.Delete, null, Modifier.size(17.dp), DangerText)
             Text(
                 text = stringResource(R.string.remove_page),
-                fontSize = 12.5.sp,
+                fontSize = TextLabel,
                 fontWeight = FontWeight.Medium,
                 color = DangerText,
             )
@@ -614,7 +620,7 @@ private fun FileNameField(
             .fillMaxWidth()
             .height(FileNameFieldHeight)
             .padding(start = 16.dp, end = 16.dp, top = 6.dp)
-            .clip(RoundedCornerShape(12.dp))
+            .clip(CornerMedium)
             .background(SurfaceContainer)
             .padding(horizontal = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -622,7 +628,7 @@ private fun FileNameField(
     ) {
         Icon(Icons.Default.Description, null, Modifier.size(20.dp), OnSurfaceVariant)
         Column(Modifier.weight(1f)) {
-            Text(stringResource(R.string.file_name_label), fontSize = 10.5.sp, color = OnSurfaceVariant)
+            Text(stringResource(R.string.file_name_label), fontSize = TextMeta, color = OnSurfaceVariant)
             BasicTextField(
                 value = name,
                 onValueChange = onChange,
@@ -632,8 +638,8 @@ private fun FileNameField(
                 // strada, così l'animazione della fascia è identica nei tre casi.
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { onDone() }),
-                textStyle = TextStyle(fontSize = 14.5.sp, color = OnSurface),
-                cursorBrush = SolidColor(Green),
+                textStyle = TextStyle(fontSize = TextBody, color = OnSurface),
+                cursorBrush = SolidColor(Accent),
                 modifier = Modifier
                     .fillMaxWidth()
                     .onFocusChanged { if (it.isFocused) onFocused() },
@@ -657,32 +663,32 @@ private fun BottomActions(enabled: Boolean, onSave: () -> Unit, onShare: () -> U
         Row(
             modifier = Modifier
                 .fillMaxHeight()
-                .clip(RoundedCornerShape(16.dp))
-                .border(1.dp, Outline, RoundedCornerShape(16.dp))
+                .clip(CornerMedium)
+                .border(1.dp, Outline, CornerMedium)
                 .clickable(enabled = enabled, onClick = onShare)
                 .padding(horizontal = 18.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Icon(Icons.Default.Share, null, Modifier.size(20.dp), OnSurfaceStrong)
-            Text(stringResource(R.string.share), fontSize = 15.sp, color = OnSurfaceStrong)
+            Text(stringResource(R.string.share), fontSize = TextBody, color = OnSurfaceStrong)
         }
         Row(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight()
-                .clip(RoundedCornerShape(16.dp))
-                .background(if (enabled) Green else Outline)
+                .clip(CornerMedium)
+                .background(if (enabled) Accent else Outline)
                 .clickable(enabled = enabled, onClick = onSave),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(9.dp, Alignment.CenterHorizontally),
         ) {
-            Icon(Icons.Default.Save, null, Modifier.size(21.dp), Color.White)
+            Icon(Icons.Default.Save, null, Modifier.size(21.dp), if (enabled) OnAccent else Color.White)
             Text(
                 stringResource(R.string.save_to_phone),
-                fontSize = 15.sp,
+                fontSize = TextBody,
                 fontWeight = FontWeight.Medium,
-                color = Color.White,
+                color = if (enabled) OnAccent else Color.White,
             )
         }
     }
@@ -705,6 +711,10 @@ private fun ExportSheet(
     BottomSheet(
         onDismiss = onDismiss,
         dismissible = stage != ExportStage.BUSY,
+        // Dalla scelta della cartella il back torna alle destinazioni invece di
+        // chiudere: è un passo dentro il pannello, non un'uscita, e infatti non
+        // ha bisogno di animazione perché il pannello resta dov'è.
+        onBack = if (stage == ExportStage.FOLDERS) onBackToDestinations else null,
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 24.dp),
     ) {
         // Altezza minima comune alle tre fasi: senza, il pannello saltava
@@ -712,10 +722,10 @@ private fun ExportSheet(
         Column(Modifier.heightIn(min = 248.dp)) {
             when (stage) {
                 ExportStage.DESTINATIONS -> {
-                    Text(stringResource(R.string.save_sheet_title, pendingPageLabel(pending.pageCount, pending.scanMode.isTwoSided)), fontSize = 19.sp, color = OnSurface)
+                    Text(stringResource(R.string.save_sheet_title, pendingPageLabel(pending.pageCount, pending.scanMode.isTwoSided)), fontSize = TextTitle, color = OnSurface)
                     Text(
                         stringResource(R.string.save_sheet_subtitle, String.format(Locale.getDefault(), "%.1f MB", pending.fileSizeMb)),
-                        fontSize = 13.sp,
+                        fontSize = TextLabel,
                         color = OnSurfaceVariant,
                         modifier = Modifier.padding(bottom = 16.dp),
                     )
@@ -734,7 +744,7 @@ private fun ExportSheet(
                     )
                     Text(
                         stringResource(R.string.save_sheet_note),
-                        fontSize = 12.sp,
+                        fontSize = TextLabel,
                         color = OnSurfaceVariant,
                         modifier = Modifier.padding(top = 14.dp),
                     )
@@ -749,8 +759,8 @@ private fun ExportSheet(
                         )
                         Spacer(Modifier.width(10.dp))
                         Column {
-                            Text(stringResource(R.string.choose_folder), fontSize = 18.sp, color = OnSurface)
-                            Text(stringResource(R.string.choose_folder_subtitle), fontSize = 12.5.sp, color = OnSurfaceVariant)
+                            Text(stringResource(R.string.choose_folder), fontSize = TextTitle, color = OnSurface)
+                            Text(stringResource(R.string.choose_folder_subtitle), fontSize = TextLabel, color = OnSurfaceVariant)
                         }
                     }
                     Column(
@@ -772,29 +782,29 @@ private fun ExportSheet(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(56.dp)
-                                .clip(RoundedCornerShape(14.dp))
-                                .border(1.dp, OutlineDashed, RoundedCornerShape(14.dp))
+                                .clip(CornerMedium)
+                                .border(1.dp, OutlineDashed, CornerMedium)
                                 .padding(horizontal = 16.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(14.dp),
                         ) {
-                            Icon(Icons.Default.CreateNewFolder, null, Modifier.size(22.dp), Green)
-                            Text(stringResource(R.string.folders_from_archive), fontSize = 14.5.sp, color = OnSurfaceFaint)
+                            Icon(Icons.Default.CreateNewFolder, null, Modifier.size(22.dp), Accent)
+                            Text(stringResource(R.string.folders_from_archive), fontSize = TextBody, color = OnSurfaceFaint)
                         }
                     }
                 }
 
                 ExportStage.BUSY -> {
-                    Text(stringResource(R.string.saving), fontSize = 19.sp, color = OnSurface)
+                    Text(stringResource(R.string.saving), fontSize = TextTitle, color = OnSurface)
                     Text(
                         "${pending.fileName}.pdf · ${pendingPageLabel(pending.pageCount, pending.scanMode.isTwoSided)}",
-                        fontSize = 13.sp,
+                        fontSize = TextLabel,
                         color = OnSurfaceVariant,
                         modifier = Modifier.padding(bottom = 20.dp),
                     )
                     LinearProgressIndicator(
-                        modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
-                        color = Green,
+                        modifier = Modifier.fillMaxWidth().height(6.dp).clip(CornerSmall),
+                        color = Accent,
                     )
                     Spacer(Modifier.height(26.dp))
                 }
@@ -817,17 +827,17 @@ private fun DestinationRow(
         modifier = Modifier
             .fillMaxWidth()
             .height(58.dp)
-            .clip(RoundedCornerShape(14.dp))
+            .clip(CornerMedium)
             .background(SurfaceContainer)
             .clickable(onClick = onClick)
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Icon(icon, null, Modifier.size(22.dp), Green)
+        Icon(icon, null, Modifier.size(22.dp), Accent)
         Column(Modifier.weight(1f)) {
-            Text(label, fontSize = 14.5.sp, fontWeight = FontWeight.Medium, color = OnSurface)
-            Text(sub, fontSize = 12.sp, color = OnSurfaceVariant)
+            Text(label, fontSize = TextBody, fontWeight = FontWeight.Medium, color = OnSurface)
+            Text(sub, fontSize = TextLabel, color = OnSurfaceVariant)
         }
         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, Modifier.size(19.dp), OnSurfaceFaint)
     }

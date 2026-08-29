@@ -9,7 +9,9 @@ import androidx.annotation.StringRes
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import it.example.docscan.R
+import it.example.docscan.data.AccentColor
 import it.example.docscan.data.AppLanguage
+import it.example.docscan.data.CardStyle
 import it.example.docscan.data.AppSettings
 import it.example.docscan.data.DocKind
 import it.example.docscan.data.DocumentRecord
@@ -942,6 +944,20 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
     /** Cambia tema e lo salva subito: deve sopravvivere alla chiusura dell'app. */
     fun setThemeMode(mode: ThemeMode) {
         val next = _state.value.settings.copy(themeMode = mode)
+        settingsStore.save(next)
+        _state.update { it.copy(settings = next) }
+    }
+
+    /** Cambia il colore d'accento. Come il tema, va salvato subito. */
+    fun setAccent(accent: AccentColor) {
+        val next = _state.value.settings.copy(accent = accent)
+        settingsStore.save(next)
+        _state.update { it.copy(settings = next) }
+    }
+
+    /** Cambia l'aspetto delle carte dei documenti. */
+    fun setCardStyle(style: CardStyle) {
+        val next = _state.value.settings.copy(cardStyle = style)
         settingsStore.save(next)
         _state.update { it.copy(settings = next) }
     }

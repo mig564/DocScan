@@ -3,93 +3,157 @@ package it.example.docscan.ui.theme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import it.example.docscan.data.AccentColor
+import it.example.docscan.data.CardStyle
 
 /**
- * Palette chiara del progetto e variante scura derivata da essa.
+ * Palette del progetto: superfici neutre più un accento scelto dall'utente.
  *
  * I nomi pubblici in fondo al file sono proprietà composable: leggono
- * [LocalDarkTheme] e danno la tinta del tema attivo. Le schermate scrivono
- * OnSurface o Green e passano allo scuro da sole.
+ * [LocalDarkTheme] e [LocalAccent] e danno la tinta giusta per il tema e il
+ * colore attivi. Le schermate scrivono OnSurface o Accent e si adeguano da sole,
+ * senza sapere né quale tema né quale accento sia in uso.
+ *
+ * Le superfici sono volutamente grigie anche in chiaro, non bianche: il
+ * contenuto dell'app è carta bianca, e su un fondo bianco ogni pagina avrebbe
+ * bisogno di un bordo per esistere. Su un grigio dichiarato le pagine si
+ * staccano da sole.
  */
 val LocalDarkTheme = staticCompositionLocalOf { false }
+val LocalAccent = staticCompositionLocalOf { AccentColor.BLUE }
+val LocalCardStyle = staticCompositionLocalOf { CardStyle.ROUNDED }
+
+// ------------------------------------------------------------------- Accenti
+
+/**
+ * Le sette tinte che servono a un accento.
+ *
+ * [onBase] è il colore del testo sopra un pieno di [base]: non è sempre bianco.
+ * In tema scuro gli accenti sono schiariti per restare leggibili sul fondo, e
+ * sopra un pieno così chiaro il bianco sparisce — lì ci va un testo scuro.
+ */
+internal class AccentTones(
+    val base: Color,
+    val strong: Color,
+    val onBase: Color,
+    val container: Color,
+    val onContainer: Color,
+    val tint: Color,
+    val onTint: Color,
+    val onTintSoft: Color,
+)
+
+private val RustLight = AccentTones(
+    base = Color(0xFFB4441F), strong = Color(0xFF8E3316), onBase = Color(0xFFFFFFFF),
+    container = Color(0xFFF7E2DA), onContainer = Color(0xFF4A1808),
+    tint = Color(0xFFFAF0EB), onTint = Color(0xFF6B2712), onTintSoft = Color(0xFF8A5B47),
+)
+private val RustDark = AccentTones(
+    base = Color(0xFFD0714C), strong = Color(0xFFE08C6B), onBase = Color(0xFF2B0F05),
+    container = Color(0xFF4A2113), onContainer = Color(0xFFF3D6C8),
+    tint = Color(0xFF2E1B12), onTint = Color(0xFFEBC3B0), onTintSoft = Color(0xFFB08A78),
+)
+
+private val BlueLight = AccentTones(
+    base = Color(0xFF2B4C8C), strong = Color(0xFF1E3A6E), onBase = Color(0xFFFFFFFF),
+    container = Color(0xFFDEE5F3), onContainer = Color(0xFF12244A),
+    tint = Color(0xFFEFF2F9), onTint = Color(0xFF24406F), onTintSoft = Color(0xFF5A6B8C),
+)
+private val BlueDark = AccentTones(
+    base = Color(0xFF8FAAD9), strong = Color(0xFFA9BFE5), onBase = Color(0xFF0C1526),
+    container = Color(0xFF22334F), onContainer = Color(0xFFD6E1F3),
+    tint = Color(0xFF1A2231), onTint = Color(0xFFC3D1E8), onTintSoft = Color(0xFF8E9CB5),
+)
+
+private val PlumLight = AccentTones(
+    base = Color(0xFF5E4B8B), strong = Color(0xFF48386D), onBase = Color(0xFFFFFFFF),
+    container = Color(0xFFE6E1F1), onContainer = Color(0xFF291D48),
+    tint = Color(0xFFF2EFF8), onTint = Color(0xFF453470), onTintSoft = Color(0xFF6F6690),
+)
+private val PlumDark = AccentTones(
+    base = Color(0xFF9B8AC4), strong = Color(0xFFB3A5D5), onBase = Color(0xFF1B1230),
+    container = Color(0xFF322A4A), onContainer = Color(0xFFDED6EE),
+    tint = Color(0xFF221D30), onTint = Color(0xFFCDC3E2), onTintSoft = Color(0xFF9990AE),
+)
+
+// Verde bottiglia, non menta: abbastanza scuro da funzionare come inchiostro su
+// fondo chiaro, cosa che il menta non faceva.
+private val GreenLight = AccentTones(
+    base = Color(0xFF2E6B45), strong = Color(0xFF1F5233), onBase = Color(0xFFFFFFFF),
+    container = Color(0xFFDCEBE1), onContainer = Color(0xFF103324),
+    tint = Color(0xFFEDF4EF), onTint = Color(0xFF26583A), onTintSoft = Color(0xFF566F5E),
+)
+private val GreenDarkTones = AccentTones(
+    base = Color(0xFF6DB287), strong = Color(0xFF8AC79F), onBase = Color(0xFF06281A),
+    container = Color(0xFF234A34), onContainer = Color(0xFFCDE6D6),
+    tint = Color(0xFF182A1F), onTint = Color(0xFFBADCC6), onTintSoft = Color(0xFF8FAE9A),
+)
+
+internal fun tonesFor(accent: AccentColor, dark: Boolean): AccentTones = when (accent) {
+    AccentColor.RUST -> if (dark) RustDark else RustLight
+    AccentColor.BLUE -> if (dark) BlueDark else BlueLight
+    AccentColor.PLUM -> if (dark) PlumDark else PlumLight
+    AccentColor.GREEN -> if (dark) GreenDarkTones else GreenLight
+}
 
 // ------------------------------------------------------------------- Chiaro
 
-private val LGreen = Color(0xFF2F7A57)
-private val LGreenDark = Color(0xFF1B6244)
-private val LGreenContainer = Color(0xFFD8EADD)
-private val LOnGreenContainer = Color(0xFF0D3324)
-private val LGreenTint = Color(0xFFEDF4EF)
-private val LOnGreenTint = Color(0xFF12402D)
-private val LOnGreenTintSoft = Color(0xFF3F6553)
+private val LSurface = Color(0xFFE4E4E0)
+private val LSurfaceDim = Color(0xFFDBDBD7)
+private val LSurfaceContainer = Color(0xFFEDEDEA)
+private val LSurfaceHigh = Color(0xFFF7F7F5)
 
-private val LSurface = Color(0xFFFBFBF9)
-private val LSurfaceDim = Color(0xFFF4F5F1)
-private val LSurfaceContainer = Color(0xFFEFF0EC)
-private val LSurfaceHigh = Color(0xFFE8EAE3)
+private val LOnSurface = Color(0xFF20201E)
+private val LOnSurfaceStrong = Color(0xFF33332F)
+private val LOnSurfaceMid = Color(0xFF4C4C48)
+private val LOnSurfaceSoft = Color(0xFF3E3E3A)
+private val LOnSurfaceVariant = Color(0xFF77776F)
+private val LOnSurfaceFaint = Color(0xFF8D8D87)
+private val LOnSurfaceGhost = Color(0xFFB4B4AE)
 
-private val LOnSurface = Color(0xFF1B1C19)
-private val LOnSurfaceStrong = Color(0xFF31352E)
-private val LOnSurfaceMid = Color(0xFF4A4E46)
-private val LOnSurfaceSoft = Color(0xFF3C4038)
-private val LOnSurfaceVariant = Color(0xFF767B72)
-private val LOnSurfaceFaint = Color(0xFF8B9088)
-private val LOnSurfaceGhost = Color(0xFFB3B7AE)
-
-private val LOutline = Color(0xFFCACCC5)
-private val LOutlineSoft = Color(0xFFE5E7E0)
-private val LOutlineFaint = Color(0xFFEDEEE9)
-private val LOutlineDashed = Color(0xFFB9BEB3)
+private val LOutline = Color(0xFFC4C4BE)
+private val LOutlineSoft = Color(0xFFD5D5D0)
+private val LOutlineFaint = Color(0xFFDEDEDA)
+private val LOutlineDashed = Color(0xFFB4B4AE)
 
 private val LDangerText = Color(0xFF8C2F1E)
-private val LDangerContainer = Color(0xFFFBE7E3)
+private val LDangerContainer = Color(0xFFF6E2DD)
 private val LWarnText = Color(0xFF8A5A08)
-private val LWarnContainer = Color(0xFFFBEEDA)
+private val LWarnContainer = Color(0xFFF5EBD8)
 
-private val LToastBg = Color(0xFF2A2E27)
-private val LToastText = Color(0xFFF2F3EF)
-private val LToastAccent = Color(0xFF8FE7B7)
+private val LToastBg = Color(0xFF2A2A28)
+private val LToastText = Color(0xFFF1F1EE)
 
-private val LPaperInk = Color(0xFF2B2F28)
-private val LPaperLine = Color(0xFFC8CBC3)
-private val LPaperLineSoft = Color(0xFFDADCD5)
-private val LPaperEdge = Color(0xFFD3D6CE)
-private val LPaperStack1 = Color(0xFFF4F5F1)
-private val LPaperStack2 = Color(0xFFEDEEE9)
-private val LBottomBar = Color(0xFFF2F3EF)
-private val LScrim = Color(0x6B121410)
+private val LPaperInk = Color(0xFF2A2A28)
+private val LPaperLine = Color(0xFFC6C6C1)
+private val LPaperLineSoft = Color(0xFFD9D9D4)
+private val LPaperEdge = Color(0xFFCFCFC9)
+private val LPaperStack1 = Color(0xFFF0F0EC)
+private val LPaperStack2 = Color(0xFFE7E7E2)
+private val LBottomBar = Color(0xFFEDEDEA)
+private val LScrim = Color(0x6B121212)
 
 // -------------------------------------------------------------------- Scuro
 
-// Il verde del design è troppo cupo per reggere su fondo scuro: qui è schiarito
-// quanto basta a restare riconoscibile e leggibile. Le superfici sono neutre
-// calde, non nero puro, per non affaticare la vista al buio.
-private val DGreen = Color(0xFF74CBA0)
-private val DGreenDark = Color(0xFF97DDBA)
-private val DGreenContainer = Color(0xFF234B3A)
-private val DOnGreenContainer = Color(0xFFCFEADB)
-private val DGreenTint = Color(0xFF1B3529)
-private val DOnGreenTint = Color(0xFFCFEADB)
-private val DOnGreenTintSoft = Color(0xFF9CBFAE)
+private val DSurface = Color(0xFF1C1C1B)
+private val DSurfaceDim = Color(0xFF151514)
+private val DSurfaceContainer = Color(0xFF262625)
+private val DSurfaceHigh = Color(0xFF313130)
 
-private val DSurface = Color(0xFF12140F)
-private val DSurfaceDim = Color(0xFF0D0F0B)
-private val DSurfaceContainer = Color(0xFF1D201A)
-private val DSurfaceHigh = Color(0xFF272B23)
+private val DOnSurface = Color(0xFFE9E9E5)
+private val DOnSurfaceStrong = Color(0xFFD6D6D1)
+private val DOnSurfaceMid = Color(0xFFC0C0BA)
+private val DOnSurfaceSoft = Color(0xFFC9C9C3)
+private val DOnSurfaceVariant = Color(0xFF9A9A93)
+private val DOnSurfaceFaint = Color(0xFF7C7C76)
+private val DOnSurfaceGhost = Color(0xFF5C5C57)
 
-private val DOnSurface = Color(0xFFE4E5DF)
-private val DOnSurfaceStrong = Color(0xFFD3D5CD)
-private val DOnSurfaceMid = Color(0xFFBFC2B9)
-private val DOnSurfaceSoft = Color(0xFFC7CAC1)
-private val DOnSurfaceVariant = Color(0xFF9BA095)
-private val DOnSurfaceFaint = Color(0xFF868B80)
-private val DOnSurfaceGhost = Color(0xFF63685E)
-
-private val DOutline = Color(0xFF444941)
-private val DOutlineSoft = Color(0xFF2C302A)
-private val DOutlineFaint = Color(0xFF23261F)
-private val DOutlineDashed = Color(0xFF565C51)
+private val DOutline = Color(0xFF464643)
+private val DOutlineSoft = Color(0xFF2F2F2D)
+private val DOutlineFaint = Color(0xFF262624)
+private val DOutlineDashed = Color(0xFF575752)
 
 private val DDangerText = Color(0xFFF2B4A2)
 private val DDangerContainer = Color(0xFF4A1E14)
@@ -97,19 +161,18 @@ private val DWarnText = Color(0xFFF3CB8B)
 private val DWarnContainer = Color(0xFF42300B)
 
 // Il toast si inverte: chiaro su scuro di giorno, scuro su chiaro di notte.
-private val DToastBg = Color(0xFFE4E5DF)
-private val DToastText = Color(0xFF1B1C19)
-private val DToastAccent = Color(0xFF1B6244)
+private val DToastBg = Color(0xFFE9E9E5)
+private val DToastText = Color(0xFF1C1C1B)
 
 // La carta scansionata resta chiara anche di notte: è un foglio, non una
 // superficie dell'interfaccia. Cambiano solo i fogli impilati dietro e il bordo.
-private val DPaperInk = Color(0xFF2B2F28)
-private val DPaperLine = Color(0xFFC8CBC3)
-private val DPaperLineSoft = Color(0xFFDADCD5)
-private val DPaperEdge = Color(0xFF6E736A)
-private val DPaperStack1 = Color(0xFF33382F)
-private val DPaperStack2 = Color(0xFF262A22)
-private val DBottomBar = Color(0xFF1A1D16)
+private val DPaperInk = Color(0xFF2A2A28)
+private val DPaperLine = Color(0xFFC6C6C1)
+private val DPaperLineSoft = Color(0xFFD9D9D4)
+private val DPaperEdge = Color(0xFF6C6C67)
+private val DPaperStack1 = Color(0xFF33332F)
+private val DPaperStack2 = Color(0xFF262623)
+private val DBottomBar = Color(0xFF232322)
 private val DScrim = Color(0x9E000000)
 
 // -------------------------------------------------- Proprietà theme-aware
@@ -118,13 +181,29 @@ private val DScrim = Color(0x9E000000)
 @Suppress("NOTHING_TO_INLINE")
 private inline fun pick(dark: Boolean, light: Color, night: Color) = if (dark) night else light
 
-val Green: Color @Composable @ReadOnlyComposable get() = pick(LocalDarkTheme.current, LGreen, DGreen)
-val GreenDark: Color @Composable @ReadOnlyComposable get() = pick(LocalDarkTheme.current, LGreenDark, DGreenDark)
-val GreenContainer: Color @Composable @ReadOnlyComposable get() = pick(LocalDarkTheme.current, LGreenContainer, DGreenContainer)
-val OnGreenContainer: Color @Composable @ReadOnlyComposable get() = pick(LocalDarkTheme.current, LOnGreenContainer, DOnGreenContainer)
-val GreenTint: Color @Composable @ReadOnlyComposable get() = pick(LocalDarkTheme.current, LGreenTint, DGreenTint)
-val OnGreenTint: Color @Composable @ReadOnlyComposable get() = pick(LocalDarkTheme.current, LOnGreenTint, DOnGreenTint)
-val OnGreenTintSoft: Color @Composable @ReadOnlyComposable get() = pick(LocalDarkTheme.current, LOnGreenTintSoft, DOnGreenTintSoft)
+private val tones: AccentTones
+    @Composable @ReadOnlyComposable
+    get() = tonesFor(LocalAccent.current, LocalDarkTheme.current)
+
+val Accent: Color @Composable @ReadOnlyComposable get() = tones.base
+val AccentStrong: Color @Composable @ReadOnlyComposable get() = tones.strong
+val OnAccent: Color @Composable @ReadOnlyComposable get() = tones.onBase
+val AccentContainer: Color @Composable @ReadOnlyComposable get() = tones.container
+val OnAccentContainer: Color @Composable @ReadOnlyComposable get() = tones.onContainer
+val AccentTint: Color @Composable @ReadOnlyComposable get() = tones.tint
+val OnAccentTint: Color @Composable @ReadOnlyComposable get() = tones.onTint
+val OnAccentTintSoft: Color @Composable @ReadOnlyComposable get() = tones.onTintSoft
+
+/**
+ * Tinta di un accento qualsiasi, non solo di quello attivo.
+ *
+ * Serve alle impostazioni, che devono mostrare tutti e quattro i colori mentre
+ * uno solo è in uso. Segue il tema, così la pastiglia mostra il colore che
+ * otterresti davvero scegliendolo adesso.
+ */
+@Composable
+@ReadOnlyComposable
+fun accentPreview(accent: AccentColor): Color = tonesFor(accent, LocalDarkTheme.current).base
 
 val Surface: Color @Composable @ReadOnlyComposable get() = pick(LocalDarkTheme.current, LSurface, DSurface)
 val SurfaceDim: Color @Composable @ReadOnlyComposable get() = pick(LocalDarkTheme.current, LSurfaceDim, DSurfaceDim)
@@ -151,7 +230,21 @@ val WarnContainer: Color @Composable @ReadOnlyComposable get() = pick(LocalDarkT
 
 val ToastBg: Color @Composable @ReadOnlyComposable get() = pick(LocalDarkTheme.current, LToastBg, DToastBg)
 val ToastText: Color @Composable @ReadOnlyComposable get() = pick(LocalDarkTheme.current, LToastText, DToastText)
-val ToastAccent: Color @Composable @ReadOnlyComposable get() = pick(LocalDarkTheme.current, LToastAccent, DToastAccent)
+
+/**
+ * Accento del toast, invertito rispetto a tutto il resto.
+ *
+ * Il toast ha il fondo scuro in tema chiaro e chiaro in tema scuro, quindi qui
+ * serve la variante opposta a quella del tema: usare [Accent] darebbe un colore
+ * scuro su fondo scuro.
+ */
+val ToastAccent: Color
+    @Composable @ReadOnlyComposable
+    get() = if (LocalDarkTheme.current) {
+        tonesFor(LocalAccent.current, dark = false).base
+    } else {
+        tonesFor(LocalAccent.current, dark = true).base
+    }
 
 val PaperInk: Color @Composable @ReadOnlyComposable get() = pick(LocalDarkTheme.current, LPaperInk, DPaperInk)
 val PaperLine: Color @Composable @ReadOnlyComposable get() = pick(LocalDarkTheme.current, LPaperLine, DPaperLine)
@@ -162,12 +255,31 @@ val PaperStack2: Color @Composable @ReadOnlyComposable get() = pick(LocalDarkThe
 val BottomBar: Color @Composable @ReadOnlyComposable get() = pick(LocalDarkTheme.current, LBottomBar, DBottomBar)
 val Scrim: Color @Composable @ReadOnlyComposable get() = pick(LocalDarkTheme.current, LScrim, DScrim)
 
+/**
+ * Il foglio bianco delle miniature, con una luce diagonale appena percettibile.
+ *
+ * Non è decorazione: un rettangolo bianco piatto sembra un buco nella
+ * schermata, mentre due bianchi di poco diversi lo fanno leggere come un
+ * oggetto appoggiato. Vale in entrambi i temi, perché il foglio è chiaro sempre.
+ */
+val PaperSheen: Brush
+    @Composable @ReadOnlyComposable
+    get() = Brush.linearGradient(listOf(Color.White, Color(0xFFF2F2EF)))
+
+/**
+ * Dissolvenza sopra la barra in fondo, dal trasparente al colore della pagina.
+ *
+ * Serve a dire che la lista continua sotto la barra invece di finire lì.
+ */
+val BottomFade: Brush
+    @Composable @ReadOnlyComposable
+    get() = Brush.verticalGradient(
+        listOf(Color.Transparent, pick(LocalDarkTheme.current, LSurface, DSurface)),
+    )
+
 // Valori grezzi per gli schemi Material, che si costruiscono fuori dalla
-// composizione e quindi non possono leggere il CompositionLocal.
+// composizione e quindi non possono leggere i CompositionLocal.
 internal object LightRaw {
-    val green = LGreen
-    val greenContainer = LGreenContainer
-    val onGreenContainer = LOnGreenContainer
     val surface = LSurface
     val onSurface = LOnSurface
     val surfaceContainer = LSurfaceContainer
@@ -179,9 +291,6 @@ internal object LightRaw {
 }
 
 internal object DarkRaw {
-    val green = DGreen
-    val greenContainer = DGreenContainer
-    val onGreenContainer = DOnGreenContainer
     val surface = DSurface
     val onSurface = DOnSurface
     val surfaceContainer = DSurfaceContainer

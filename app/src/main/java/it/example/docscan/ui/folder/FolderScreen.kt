@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -35,7 +34,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import it.example.docscan.R
 import it.example.docscan.data.DocumentRecord
 import it.example.docscan.data.Folder as DocFolder
@@ -44,9 +42,10 @@ import it.example.docscan.ui.PaperThumb
 import it.example.docscan.ui.SortField
 import it.example.docscan.ui.folderName
 import it.example.docscan.ui.pageLabel
-import it.example.docscan.ui.theme.Green
-import it.example.docscan.ui.theme.GreenContainer
-import it.example.docscan.ui.theme.OnGreenContainer
+import it.example.docscan.ui.theme.Accent
+import it.example.docscan.ui.theme.AccentContainer
+import it.example.docscan.ui.theme.CornerMedium
+import it.example.docscan.ui.theme.OnAccentContainer
 import it.example.docscan.ui.theme.OnSurface
 import it.example.docscan.ui.theme.OnSurfaceFaint
 import it.example.docscan.ui.theme.OnSurfaceSoft
@@ -57,6 +56,10 @@ import it.example.docscan.ui.theme.OutlineFaint
 import it.example.docscan.ui.theme.OutlineSoft
 import it.example.docscan.ui.theme.Surface
 import it.example.docscan.ui.theme.SurfaceContainer
+import it.example.docscan.ui.theme.TextBody
+import it.example.docscan.ui.theme.TextLabel
+import it.example.docscan.ui.theme.TextMeta
+import it.example.docscan.ui.theme.TextSubtitle
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -87,13 +90,13 @@ fun FolderScreen(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         stringResource(R.string.folder_screen_empty),
-                        fontSize = 15.sp,
+                        fontSize = TextBody,
                         fontWeight = FontWeight.Medium,
                         color = OnSurfaceStrong,
                     )
                     Text(
                         stringResource(R.string.folder_screen_empty_hint),
-                        fontSize = 13.sp,
+                        fontSize = TextLabel,
                         color = OnSurfaceVariant,
                         modifier = Modifier.padding(top = 4.dp),
                     )
@@ -127,7 +130,7 @@ private fun TopBar(folder: DocFolder, count: Int, onBack: () -> Unit) {
         Column(Modifier.weight(1f)) {
             Text(
                 text = folderName(folder),
-                fontSize = 17.sp,
+                fontSize = TextSubtitle,
                 fontWeight = FontWeight.Medium,
                 color = OnSurface,
                 maxLines = 1,
@@ -135,7 +138,7 @@ private fun TopBar(folder: DocFolder, count: Int, onBack: () -> Unit) {
             )
             Text(
                 text = pluralStringResource(R.plurals.document_count, count, count),
-                fontSize = 12.sp,
+                fontSize = TextLabel,
                 color = OnSurfaceVariant,
             )
         }
@@ -168,7 +171,7 @@ private fun SortBar(
         Box(
             modifier = Modifier
                 .size(34.dp)
-                .clip(RoundedCornerShape(9.dp))
+                .clip(CornerMedium)
                 .background(SurfaceContainer)
                 .clickable(onClick = onToggleDirection),
             contentAlignment = Alignment.Center,
@@ -191,10 +194,10 @@ private fun SortPill(label: String, selected: Boolean, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .height(34.dp)
-            .clip(RoundedCornerShape(9.dp))
+            .clip(CornerMedium)
             .then(
-                if (selected) Modifier.background(GreenContainer)
-                else Modifier.border(1.dp, Outline, RoundedCornerShape(9.dp)),
+                if (selected) Modifier.background(AccentContainer)
+                else Modifier.border(1.dp, Outline, CornerMedium),
             )
             .clickable(onClick = onClick)
             .padding(horizontal = 13.dp),
@@ -202,9 +205,9 @@ private fun SortPill(label: String, selected: Boolean, onClick: () -> Unit) {
     ) {
         Text(
             text = label,
-            fontSize = 13.sp,
+            fontSize = TextLabel,
             fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
-            color = if (selected) OnGreenContainer else OnSurfaceSoft,
+            color = if (selected) OnAccentContainer else OnSurfaceSoft,
         )
     }
 }
@@ -225,17 +228,17 @@ private fun DocumentRow(doc: DocumentRecord, onClick: () -> Unit, onLongClick: (
         Column(Modifier.weight(1f)) {
             Text(
                 text = doc.title,
-                fontSize = 14.5.sp,
+                fontSize = TextBody,
                 fontWeight = FontWeight.Medium,
                 color = OnSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(doc.pageLabel(), fontSize = 12.sp, color = OnSurfaceVariant)
+                Text(doc.pageLabel(), fontSize = TextLabel, color = OnSurfaceVariant)
                 Text(
                     text = "  ·  ${fullDate(doc.createdAtEpochMs)}",
-                    fontSize = 12.sp,
+                    fontSize = TextLabel,
                     fontFamily = FontFamily.Monospace,
                     color = OnSurfaceFaint,
                 )
@@ -243,8 +246,8 @@ private fun DocumentRow(doc: DocumentRecord, onClick: () -> Unit, onLongClick: (
             if (doc.needsReviewCount > 0) {
                 Text(
                     text = stringResource(R.string.fields_to_check, doc.needsReviewCount),
-                    fontSize = 11.5.sp,
-                    color = Green,
+                    fontSize = TextMeta,
+                    color = Accent,
                     modifier = Modifier.padding(top = 2.dp),
                 )
             }
@@ -252,7 +255,7 @@ private fun DocumentRow(doc: DocumentRecord, onClick: () -> Unit, onLongClick: (
         Box(
             modifier = Modifier
                 .size(36.dp)
-                .clip(RoundedCornerShape(18.dp))
+                .clip(CornerMedium)
                 .clickable(onClick = onLongClick),
             contentAlignment = Alignment.Center,
         ) {

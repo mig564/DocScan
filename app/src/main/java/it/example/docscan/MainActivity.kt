@@ -43,7 +43,7 @@ import it.example.docscan.ui.folderName
 import it.example.docscan.ui.library.LibraryScreen
 import it.example.docscan.ui.review.ReviewScreen
 import it.example.docscan.ui.scan.ScanModeSheet
-import it.example.docscan.ui.settings.SettingsSheet
+import it.example.docscan.ui.settings.SettingsScreen
 import it.example.docscan.ui.theme.DocScanTheme
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
@@ -119,7 +119,11 @@ class MainActivity : ComponentActivity() {
             val state by vm.state.collectAsStateWithLifecycle()
 
             WithLanguage(state.settings.language) {
-                DocScanTheme(themeMode = state.settings.themeMode) {
+                DocScanTheme(
+                    themeMode = state.settings.themeMode,
+                    accent = state.settings.accent,
+                    cardStyle = state.settings.cardStyle,
+                ) {
 
                     // I toast del design sono transitori: si spengono da soli.
                     LaunchedEffect(state.toast) {
@@ -315,13 +319,15 @@ class MainActivity : ComponentActivity() {
                     }
 
                     if (state.showSettings) {
-                        SettingsSheet(
+                        SettingsScreen(
                             settings = state.settings,
                             onThemeChange = vm::setThemeMode,
+                            onAccentChange = vm::setAccent,
+                            onCardStyleChange = vm::setCardStyle,
                             onLanguageChange = vm::setLanguage,
                             onPickFolder = { folderLauncher.launch(null) },
                             onClearFolder = vm::clearDefaultFolder,
-                            onDismiss = vm::closeSettings,
+                            onBack = vm::closeSettings,
                         )
                     }
                 }

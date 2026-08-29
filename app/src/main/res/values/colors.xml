@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Sfondo della finestra prima del primo frame di Compose: deve combaciare con
+  Surface e SurfaceDark di Color.kt, altrimenti all'avvio si vede un lampo del
+  colore sbagliato. Se cambia la palette lì, va cambiata anche qui.
+
+  Il fondo dell'icona non segue l'accento: l'accento ora lo sceglie l'utente,
+  mentre l'icona è una sola e sta nel launcher, dove non c'è modo di saperlo.
+  Un grigio d'inchiostro sta bene con tutti e quattro i colori.
+-->
 <resources>
-    <color name="surface">#FBFBF9</color>
-    <color name="surface_dark">#12140F</color>
-    <color name="ic_launcher_background">#2F7A57</color>
+    <color name="surface">#E4E4E0</color>
+    <color name="surface_dark">#1C1C1B</color>
+    <color name="ic_launcher_background">#20201E</color>
 </resources>

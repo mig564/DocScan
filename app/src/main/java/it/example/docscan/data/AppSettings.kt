@@ -7,6 +7,25 @@ import it.example.docscan.R
 enum class ThemeMode { LIGHT, DARK, SYSTEM }
 
 /**
+ * Colore d'accento scelto dall'utente.
+ *
+ * Sono quattro tinte pensate per reggere come inchiostro sul tema chiaro, non
+ * come pastelli: ognuna ha una versione schiarita per il tema scuro, dove una
+ * tinta scura sparirebbe. Nessuna è vicina al rosso dell'eliminazione, che deve
+ * restare l'unico rosso dell'interfaccia.
+ */
+enum class AccentColor { RUST, BLUE, PLUM, GREEN }
+
+/**
+ * Aspetto delle carte dei documenti.
+ *
+ * [ROUNDED] è la carta con angoli tondi su fondo pieno. [UNDERLINED] toglie il
+ * contenitore e separa gli elementi con un filetto, lasciando che sia la pagina
+ * scansionata l'unica forma piena della schermata.
+ */
+enum class CardStyle { ROUNDED, UNDERLINED }
+
+/**
  * Lingua dell'interfaccia.
  *
  * [SYSTEM] segue la lingua del telefono, ed è il valore al primo avvio: un'app
@@ -32,6 +51,8 @@ enum class AppLanguage(val tag: String?) {
  */
 data class AppSettings(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val accent: AccentColor = AccentColor.BLUE,
+    val cardStyle: CardStyle = CardStyle.ROUNDED,
     val language: AppLanguage = AppLanguage.SYSTEM,
     val defaultFolderUri: String? = null,
     val defaultFolderLabel: String? = null,
@@ -48,6 +69,8 @@ class SettingsStore(private val context: Context) {
 
     companion object {
         private const val KEY_THEME = "theme_mode"
+        private const val KEY_ACCENT = "accent_color"
+        private const val KEY_CARD_STYLE = "card_style"
         private const val KEY_LANGUAGE = "language"
         private const val KEY_FOLDER_URI = "default_folder_uri"
         private const val KEY_FOLDER_LABEL = "default_folder_label"
@@ -66,6 +89,12 @@ class SettingsStore(private val context: Context) {
         return AppSettings(
             themeMode = runCatching { ThemeMode.valueOf(themeName ?: "") }
                 .getOrDefault(ThemeMode.SYSTEM),
+            accent = runCatching {
+                AccentColor.valueOf(prefs.getString(KEY_ACCENT, "") ?: "")
+            }.getOrDefault(AccentColor.BLUE),
+            cardStyle = runCatching {
+                CardStyle.valueOf(prefs.getString(KEY_CARD_STYLE, "") ?: "")
+            }.getOrDefault(CardStyle.ROUNDED),
             language = runCatching {
                 AppLanguage.valueOf(prefs.getString(KEY_LANGUAGE, "") ?: "")
             }.getOrDefault(AppLanguage.SYSTEM),
@@ -78,6 +107,8 @@ class SettingsStore(private val context: Context) {
     fun save(settings: AppSettings) {
         prefs.edit {
             putString(KEY_THEME, settings.themeMode.name)
+            putString(KEY_ACCENT, settings.accent.name)
+            putString(KEY_CARD_STYLE, settings.cardStyle.name)
             putString(KEY_LANGUAGE, settings.language.name)
             putString(KEY_FOLDER_URI, settings.defaultFolderUri)
             putString(KEY_FOLDER_LABEL, settings.defaultFolderLabel)

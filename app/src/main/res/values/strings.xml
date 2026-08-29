@@ -161,6 +161,10 @@
 
     <!-- Impostazioni -->
     <string name="appearance">ASPETTO</string>
+    <string name="accent_color">COLORE</string>
+    <string name="card_style">SCHEDE</string>
+    <string name="card_style_rounded">Arrotondate</string>
+    <string name="card_style_underlined">Sottolineate</string>
     <string name="theme_light">Chiaro</string>
     <string name="theme_dark">Scuro</string>
     <string name="theme_system">Sistema</string>
@@ -173,7 +177,6 @@
     <string name="pick_folder_hint">Tocca per sceglierne una fissa</string>
     <string name="change_folder_hint">Tocca per cambiarla</string>
     <string name="reset">Azzera</string>
-    <string name="folder_note">Android non consente di memorizzare un percorso: viene salvato il permesso sulla cartella che scegli, e resta valido finché non la revochi o disinstalli l\'app.</string>
     <string name="no_folder_chosen">Nessuna cartella scelta</string>
     <string name="internal_storage">Memoria interna</string>
 

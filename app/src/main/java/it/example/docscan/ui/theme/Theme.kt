@@ -15,60 +15,75 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
+import androidx.compose.material3.ColorScheme
+import androidx.compose.runtime.remember
+import it.example.docscan.data.AccentColor
+import it.example.docscan.data.CardStyle
 import it.example.docscan.data.ThemeMode
 
-private val LightScheme = lightColorScheme(
-    primary = LightRaw.green,
-    onPrimary = Color.White,
-    primaryContainer = LightRaw.greenContainer,
-    onPrimaryContainer = LightRaw.onGreenContainer,
-    background = LightRaw.surface,
-    onBackground = LightRaw.onSurface,
-    surface = LightRaw.surface,
-    onSurface = LightRaw.onSurface,
-    surfaceVariant = LightRaw.surfaceContainer,
-    onSurfaceVariant = LightRaw.onSurfaceVariant,
-    outline = LightRaw.outline,
-    outlineVariant = LightRaw.outlineSoft,
-    error = LightRaw.dangerText,
-    onError = Color.White,
-    errorContainer = LightRaw.dangerContainer,
-    onErrorContainer = LightRaw.dangerText,
-)
-
-private val DarkScheme = darkColorScheme(
-    primary = DarkRaw.green,
-    onPrimary = Color(0xFF06281A),
-    primaryContainer = DarkRaw.greenContainer,
-    onPrimaryContainer = DarkRaw.onGreenContainer,
-    background = DarkRaw.surface,
-    onBackground = DarkRaw.onSurface,
-    surface = DarkRaw.surface,
-    onSurface = DarkRaw.onSurface,
-    surfaceVariant = DarkRaw.surfaceContainer,
-    onSurfaceVariant = DarkRaw.onSurfaceVariant,
-    outline = DarkRaw.outline,
-    outlineVariant = DarkRaw.outlineSoft,
-    error = DarkRaw.dangerText,
-    onError = Color(0xFF2B0C05),
-    errorContainer = DarkRaw.dangerContainer,
-    onErrorContainer = DarkRaw.dangerText,
-)
+/**
+ * Gli schemi Material si costruiscono ora a partire dall'accento scelto.
+ *
+ * Erano due costanti perché il colore era uno solo. Con quattro accenti
+ * diventerebbero otto costanti, quindi li si costruisce al volo e si ricordano:
+ * l'utente cambia colore una volta ogni tanto, non a ogni fotogramma.
+ */
+private fun schemeFor(accent: AccentColor, dark: Boolean): ColorScheme {
+    val t = tonesFor(accent, dark)
+    return if (dark) {
+        darkColorScheme(
+            primary = t.base,
+            onPrimary = t.onBase,
+            primaryContainer = t.container,
+            onPrimaryContainer = t.onContainer,
+            background = DarkRaw.surface,
+            onBackground = DarkRaw.onSurface,
+            surface = DarkRaw.surface,
+            onSurface = DarkRaw.onSurface,
+            surfaceVariant = DarkRaw.surfaceContainer,
+            onSurfaceVariant = DarkRaw.onSurfaceVariant,
+            outline = DarkRaw.outline,
+            outlineVariant = DarkRaw.outlineSoft,
+            error = DarkRaw.dangerText,
+            onError = Color(0xFF2B0C05),
+            errorContainer = DarkRaw.dangerContainer,
+            onErrorContainer = DarkRaw.dangerText,
+        )
+    } else {
+        lightColorScheme(
+            primary = t.base,
+            onPrimary = t.onBase,
+            primaryContainer = t.container,
+            onPrimaryContainer = t.onContainer,
+            background = LightRaw.surface,
+            onBackground = LightRaw.onSurface,
+            surface = LightRaw.surface,
+            onSurface = LightRaw.onSurface,
+            surfaceVariant = LightRaw.surfaceContainer,
+            onSurfaceVariant = LightRaw.onSurfaceVariant,
+            outline = LightRaw.outline,
+            outlineVariant = LightRaw.outlineSoft,
+            error = LightRaw.dangerText,
+            onError = Color.White,
+            errorContainer = LightRaw.dangerContainer,
+            onErrorContainer = LightRaw.dangerText,
+        )
+    }
+}
 
 // Roboto è il font di sistema Android, non serve impacchettarlo. Per i valori
 // monospace uso FontFamily.Monospace invece di Roboto Mono: evita di dipendere
 // da un .ttf negli asset, che è una fonte classica di build rotte.
 private val DocScanTypography = Typography(
-    headlineMedium = TextStyle(fontSize = 26.sp, fontWeight = FontWeight.Normal),
-    titleLarge = TextStyle(fontSize = 19.sp, fontWeight = FontWeight.Normal),
-    titleMedium = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.Medium),
-    titleSmall = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium),
-    bodyLarge = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Normal),
-    bodyMedium = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Normal),
-    bodySmall = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Normal),
+    headlineMedium = TextStyle(fontSize = TextDisplay, fontWeight = FontWeight.Normal),
+    titleLarge = TextStyle(fontSize = TextTitle, fontWeight = FontWeight.Normal),
+    titleMedium = TextStyle(fontSize = TextSubtitle, fontWeight = FontWeight.Medium),
+    titleSmall = TextStyle(fontSize = TextBody, fontWeight = FontWeight.Medium),
+    bodyLarge = TextStyle(fontSize = TextBody, fontWeight = FontWeight.Normal),
+    bodyMedium = TextStyle(fontSize = TextBody, fontWeight = FontWeight.Normal),
+    bodySmall = TextStyle(fontSize = TextLabel, fontWeight = FontWeight.Normal),
     labelSmall = TextStyle(
-        fontSize = 11.sp,
+        fontSize = TextMeta,
         fontWeight = FontWeight.Normal,
         fontFamily = FontFamily.Monospace,
     ),
@@ -80,7 +95,12 @@ private val DocScanTypography = Typography(
  * senza bisogno di riavvio.
  */
 @Composable
-fun DocScanTheme(themeMode: ThemeMode = ThemeMode.SYSTEM, content: @Composable () -> Unit) {
+fun DocScanTheme(
+    themeMode: ThemeMode = ThemeMode.SYSTEM,
+    accent: AccentColor = AccentColor.BLUE,
+    cardStyle: CardStyle = CardStyle.ROUNDED,
+    content: @Composable () -> Unit,
+) {
     val dark = when (themeMode) {
         ThemeMode.LIGHT -> false
         ThemeMode.DARK -> true
@@ -101,9 +121,15 @@ fun DocScanTheme(themeMode: ThemeMode = ThemeMode.SYSTEM, content: @Composable (
         }
     }
 
-    CompositionLocalProvider(LocalDarkTheme provides dark) {
+    val scheme = remember(accent, dark) { schemeFor(accent, dark) }
+
+    CompositionLocalProvider(
+        LocalDarkTheme provides dark,
+        LocalAccent provides accent,
+        LocalCardStyle provides cardStyle,
+    ) {
         MaterialTheme(
-            colorScheme = if (dark) DarkScheme else LightScheme,
+            colorScheme = scheme,
             typography = DocScanTypography,
             content = content,
         )
