@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Glifo del documento scansionato, disegnato come vector: niente PNG da
-     generare, nessun asset binario nel repository. -->
+<!-- Livello di primo piano: il documento bianco con l'angolo piegato.
+
+     Sta dentro il cerchio di sicurezza di 66 sui 108, che e' la sola zona che
+     ogni launcher mostra per intero. Il mock di partenza lo aveva molto piu'
+     grande, ma li' era un riquadro piatto: qui una maschera circolare gli
+     taglierebbe gli angoli. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
@@ -8,11 +12,7 @@
     android:viewportHeight="108">
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M38,30h24l12,12v36a4,4 0 0,1 -4,4h-32a4,4 0 0,1 -4,-4v-44a4,4 0 0,1 4,-4z" />
-    <path
-        android:fillColor="#D8EADD"
-        android:pathData="M62,30l12,12h-12z" />
-    <path
-        android:fillColor="#2F7A57"
-        android:pathData="M42,52h20v3h-20zM42,60h20v3h-20zM42,68h13v3h-13z" />
+        android:pathData="M38,29 H62.4 L73,39 V76 a3,3 0 0,1 -3,3 H38 a3,3 0 0,1 -3,-3 V32 a3,3 0 0,1 3,-3 z" />
+    <!-- L'angolo ripiegato: stessa ombra del disegno originale. -->
+    <path android:fillColor="#3814161A" android:pathData="M62.4,29 L73,39 H62.4 Z" />
 </vector>

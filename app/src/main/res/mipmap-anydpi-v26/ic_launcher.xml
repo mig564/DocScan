@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@color/ic_launcher_background" />
+    <background android:drawable="@drawable/ic_launcher_background" />
     <foreground android:drawable="@drawable/ic_launcher_foreground" />
-    <!-- Icona a tinta unica per il tema dinamico di Android 13 e successivi. -->
-    <monochrome android:drawable="@drawable/ic_launcher_foreground" />
+    <!-- Sagoma di un colore solo per le icone a tema di Android 13 e successivi.
+         Non e' il primo piano: quello ha l'ombra della piega, che tinta di un
+         colore solo diventerebbe una macchia. -->
+    <monochrome android:drawable="@drawable/ic_launcher_monochrome" />
 </adaptive-icon>

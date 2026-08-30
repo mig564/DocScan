@@ -100,10 +100,15 @@ internal fun tonesFor(accent: AccentColor, dark: Boolean): AccentTones = when (a
 
 // ------------------------------------------------------------------- Chiaro
 
-private val LSurface = Color(0xFFE4E4E0)
-private val LSurfaceDim = Color(0xFFDBDBD7)
-private val LSurfaceContainer = Color(0xFFEDEDEA)
-private val LSurfaceHigh = Color(0xFFF7F7F5)
+// Quasi bianco. Con una pagina così chiara il rilievo non può più andare verso
+// il bianco, perché il bianco è già la pagina: le superfici sopra sono appena
+// più grigie, che è il modello classico delle carte grigie su fondo chiaro. Il
+// bianco pieno resta riservato alle pagine scansionate, che con il bordo di
+// PaperEdge si staccano lo stesso.
+private val LSurface = Color(0xFFFAFAF9)
+private val LSurfaceDim = Color(0xFFEDEDEB)
+private val LSurfaceContainer = Color(0xFFF1F1EF)
+private val LSurfaceHigh = Color(0xFFF4F4F2)
 
 private val LOnSurface = Color(0xFF20201E)
 private val LOnSurfaceStrong = Color(0xFF33332F)
@@ -113,10 +118,10 @@ private val LOnSurfaceVariant = Color(0xFF77776F)
 private val LOnSurfaceFaint = Color(0xFF8D8D87)
 private val LOnSurfaceGhost = Color(0xFFB4B4AE)
 
-private val LOutline = Color(0xFFC4C4BE)
-private val LOutlineSoft = Color(0xFFD5D5D0)
-private val LOutlineFaint = Color(0xFFDEDEDA)
-private val LOutlineDashed = Color(0xFFB4B4AE)
+private val LOutline = Color(0xFFD9D9D4)
+private val LOutlineSoft = Color(0xFFE5E5E1)
+private val LOutlineFaint = Color(0xFFEEEEEB)
+private val LOutlineDashed = Color(0xFFCBCBC5)
 
 private val LDangerText = Color(0xFF8C2F1E)
 private val LDangerContainer = Color(0xFFF6E2DD)
@@ -129,10 +134,10 @@ private val LToastText = Color(0xFFF1F1EE)
 private val LPaperInk = Color(0xFF2A2A28)
 private val LPaperLine = Color(0xFFC6C6C1)
 private val LPaperLineSoft = Color(0xFFD9D9D4)
-private val LPaperEdge = Color(0xFFCFCFC9)
-private val LPaperStack1 = Color(0xFFF0F0EC)
-private val LPaperStack2 = Color(0xFFE7E7E2)
-private val LBottomBar = Color(0xFFEDEDEA)
+private val LPaperEdge = Color(0xFFDCDCD6)
+private val LPaperStack1 = Color(0xFFEFEFEB)
+private val LPaperStack2 = Color(0xFFE5E5E0)
+private val LBottomBar = Color(0xFFF2F2F0)
 private val LScrim = Color(0x6B121212)
 
 // -------------------------------------------------------------------- Scuro

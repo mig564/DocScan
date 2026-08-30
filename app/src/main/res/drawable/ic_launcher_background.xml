@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Livello di fondo dell'icona: i quattro quadranti diagonali, uno per
+     accento. Sta qui e non nel primo piano perche' deve arrivare fino ai bordi:
+     alcuni launcher spostano il primo piano rispetto al fondo mentre scorri la
+     schermata, e un colore che finisse nel livello sbagliato scoprirebbe il
+     vuoto dietro. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:fillColor="#2B4C8C" android:pathData="M0,0 H108 L54,54 Z" />
+    <path android:fillColor="#B4441F" android:pathData="M108,0 V108 L54,54 Z" />
+    <path android:fillColor="#5E4B8B" android:pathData="M108,108 H0 L54,54 Z" />
+    <path android:fillColor="#2E6B45" android:pathData="M0,108 V0 L54,54 Z" />
+</vector>

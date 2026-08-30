@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Livello per le icone a tema di Android 13 e successivi.
+
+     Quando l'utente attiva le icone a tema, il sistema colora questa sagoma con
+     la tavolozza dello sfondo e le mette dietro un fondo che segue chiaro e
+     scuro. E' l'unico modo supportato perche' l'icona segua il tema: e' anche il
+     motivo per cui i quattro colori qui non ci sono, perche' un glifo a tema e'
+     di un colore solo. Resta il documento con l'angolo tagliato, che da solo si
+     riconosce lo stesso. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M38,29 H62.4 L73,39 V76 a3,3 0 0,1 -3,3 H38 a3,3 0 0,1 -3,-3 V32 a3,3 0 0,1 3,-3 z" />
+</vector>

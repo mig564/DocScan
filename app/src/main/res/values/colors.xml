@@ -4,12 +4,10 @@
   Surface e SurfaceDark di Color.kt, altrimenti all'avvio si vede un lampo del
   colore sbagliato. Se cambia la palette lì, va cambiata anche qui.
 
-  Il fondo dell'icona non segue l'accento: l'accento ora lo sceglie l'utente,
-  mentre l'icona è una sola e sta nel launcher, dove non c'è modo di saperlo.
-  Un grigio d'inchiostro sta bene con tutti e quattro i colori.
+  Il fondo dell'icona non è più un colore ma un disegno, e sta in
+  drawable/ic_launcher_background.xml.
 -->
 <resources>
-    <color name="surface">#E4E4E0</color>
+    <color name="surface">#FAFAF9</color>
     <color name="surface_dark">#1C1C1B</color>
-    <color name="ic_launcher_background">#20201E</color>
 </resources>
