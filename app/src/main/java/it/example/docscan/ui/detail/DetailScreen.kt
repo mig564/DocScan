@@ -5,29 +5,23 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
@@ -56,6 +50,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
@@ -67,6 +62,7 @@ import androidx.compose.ui.unit.sp
 import it.example.docscan.R
 import it.example.docscan.data.DocumentRecord
 import it.example.docscan.data.FitMode
+import it.example.docscan.ui.AnimatedDialog
 import it.example.docscan.ui.BackButton
 import it.example.docscan.ui.PaperThumb
 import it.example.docscan.ui.fieldLabel
@@ -92,7 +88,6 @@ import it.example.docscan.ui.theme.Outline
 import it.example.docscan.ui.theme.OutlineDashed
 import it.example.docscan.ui.theme.OutlineFaint
 import it.example.docscan.ui.theme.OutlineSoft
-import it.example.docscan.ui.theme.Scrim
 import it.example.docscan.ui.theme.Surface
 import it.example.docscan.ui.theme.SurfaceContainer
 import it.example.docscan.ui.theme.TextBody
@@ -400,9 +395,9 @@ private fun SummaryBanner(record: DocumentRecord) {
             )
             Text(
                 text = if (record.needsReviewCount > 0)
-                    stringResource(R.string.fields_summary_review, record.fields.size, record.needsReviewCount)
+                    pluralStringResource(R.plurals.fields_summary_review, record.fields.size, record.fields.size, record.needsReviewCount)
                 else
-                    stringResource(R.string.fields_summary, record.fields.size),
+                    pluralStringResource(R.plurals.fields_summary, record.fields.size, record.fields.size),
                 fontSize = TextLabel,
                 color = OnAccentTintSoft,
                 modifier = Modifier.padding(top = 3.dp),
@@ -693,61 +688,40 @@ private fun AddFieldDialog(onConfirm: (String, String) -> Unit, onDismiss: () ->
     var label by remember { mutableStateOf("") }
     var value by remember { mutableStateOf("") }
 
-    Box(
-        modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing),
-        contentAlignment = Alignment.Center,
-    ) {
-        Box(Modifier.fillMaxSize().background(Scrim).clickable(onClick = onDismiss))
-        Column(
-            modifier = Modifier
-                .padding(horizontal = 24.dp)
-                .fillMaxWidth()
-                .clip(CornerRound)
-                .background(Surface)
-                // Consuma i tocchi: altrimenti un tap sulla scheda arriva allo
-                // scrim sottostante e chiude il dialogo.
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = {},
+    AnimatedDialog(onDismiss = onDismiss) { dialog ->
+        Text(stringResource(R.string.new_field), fontSize = TextSubtitle, fontWeight = FontWeight.Medium, color = OnSurface)
+        Spacer(Modifier.height(14.dp))
+        DialogField(stringResource(R.string.field_label), label) { label = it }
+        Spacer(Modifier.height(10.dp))
+        DialogField(stringResource(R.string.field_value), value) { value = it }
+        Spacer(Modifier.height(18.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(46.dp)
+                    .clip(CornerMedium)
+                    .border(1.dp, Outline, CornerMedium)
+                    .clickable { dialog.dismiss() },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(stringResource(R.string.cancel), fontSize = TextBody, color = OnSurfaceStrong)
+            }
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(46.dp)
+                    .clip(CornerMedium)
+                    .background(Accent)
+                    .clickable { dialog.confirm { onConfirm(label, value) } },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    stringResource(R.string.add),
+                    fontSize = TextBody,
+                    fontWeight = FontWeight.Medium,
+                    color = OnAccent,
                 )
-                .verticalScroll(rememberScrollState())
-                .padding(20.dp),
-        ) {
-            Text(stringResource(R.string.new_field), fontSize = TextSubtitle, fontWeight = FontWeight.Medium, color = OnSurface)
-            Spacer(Modifier.height(14.dp))
-            DialogField(stringResource(R.string.field_label), label) { label = it }
-            Spacer(Modifier.height(10.dp))
-            DialogField(stringResource(R.string.field_value), value) { value = it }
-            Spacer(Modifier.height(18.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(46.dp)
-                        .clip(CornerMedium)
-                        .border(1.dp, Outline, CornerMedium)
-                        .clickable(onClick = onDismiss),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(stringResource(R.string.cancel), fontSize = TextBody, color = OnSurfaceStrong)
-                }
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(46.dp)
-                        .clip(CornerMedium)
-                        .background(Accent)
-                        .clickable { onConfirm(label, value) },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        stringResource(R.string.add),
-                        fontSize = TextBody,
-                        fontWeight = FontWeight.Medium,
-                        color = OnAccent,
-                    )
-                }
             }
         }
     }

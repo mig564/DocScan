@@ -34,6 +34,19 @@ android {
         compose = true
     }
 
+    // L'app ha un selettore di lingua nelle impostazioni, quindi cambia la
+    // lingua a runtime. Per impostazione predefinita un App Bundle scarica solo
+    // le lingue di sistema del telefono: chi ha il telefono in inglese e
+    // sceglie l'italiano nell'app troverebbe le stringhe non tradotte, perché
+    // quelle risorse non sono mai state scaricate. Tenendo tutte le lingue
+    // dentro il bundle il selettore funziona sempre — costa qualche decina di
+    // chilobyte, che con due sole lingue è niente.
+    bundle {
+        language {
+            enableSplit = false
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

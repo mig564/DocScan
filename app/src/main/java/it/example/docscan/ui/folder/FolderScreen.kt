@@ -245,7 +245,7 @@ private fun DocumentRow(doc: DocumentRecord, onClick: () -> Unit, onLongClick: (
             }
             if (doc.needsReviewCount > 0) {
                 Text(
-                    text = stringResource(R.string.fields_to_check, doc.needsReviewCount),
+                    text = pluralStringResource(R.plurals.fields_to_check, doc.needsReviewCount, doc.needsReviewCount),
                     fontSize = TextMeta,
                     color = Accent,
                     modifier = Modifier.padding(top = 2.dp),

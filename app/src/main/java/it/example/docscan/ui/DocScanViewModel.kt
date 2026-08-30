@@ -5,6 +5,7 @@ import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.net.Uri
 import android.net.Uri as AndroidUri
+import androidx.annotation.PluralsRes
 import androidx.annotation.StringRes
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -162,6 +163,25 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
             base.createConfigurationContext(config)
         }
         return if (args.isEmpty()) ctx.getString(id) else ctx.getString(id, *args)
+    }
+
+    /**
+     * Come [str] ma per i plurali, che vanno risolti con la quantità.
+     *
+     * Serve una funzione a parte perché il ViewModel non è composable e non può
+     * usare pluralStringResource: deve passare dallo stesso contesto con la
+     * lingua scelta dall'utente, altrimenti i messaggi uscirebbero nella lingua
+     * di sistema invece che in quella dell'app.
+     */
+    private fun plural(@PluralsRes id: Int, count: Int, vararg args: Any): String {
+        val base = getApplication<Application>()
+        val tag = _state.value.settings.language.tag
+        val ctx = if (tag == null) base else {
+            val locale = Locale.forLanguageTag(tag)
+            val config = Configuration(base.resources.configuration).apply { setLocale(locale) }
+            base.createConfigurationContext(config)
+        }
+        return ctx.resources.getQuantityString(id, count, *args)
     }
 
     private suspend fun loadRecords(): List<DocumentRecord> {
@@ -763,7 +783,7 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
             val removed = repo.purgeUnreadable(files)
             val records = loadRecords()
             _state.update {
-                it.copy(records = records, toast = str(R.string.msg_purged, removed))
+                it.copy(records = records, toast = plural(R.plurals.msg_purged, removed, removed))
             }
         }
     }

@@ -23,14 +23,17 @@
     <string name="library_subtitle">%1$s · %2$s</string>
     <plurals name="scan_count">
         <item quantity="one">%d scansione</item>
+        <item quantity="many">%d scansioni</item>
         <item quantity="other">%d scansioni</item>
     </plurals>
     <plurals name="page_count">
         <item quantity="one">%d pagina</item>
+        <item quantity="many">%d pagine</item>
         <item quantity="other">%d pagine</item>
     </plurals>
     <plurals name="document_count">
         <item quantity="one">%d documento</item>
+        <item quantity="many">%d documenti</item>
         <item quantity="other">%d documenti</item>
     </plurals>
     <string name="search_hint">Cerca scansione</string>
@@ -55,6 +58,7 @@
     <string name="unreadable_title">%1$s non leggibili</string>
     <plurals name="unreadable_count">
         <item quantity="one">%d documento</item>
+        <item quantity="many">%d documenti</item>
         <item quantity="other">%d documenti</item>
     </plurals>
     <string name="unreadable_body">I file sono presenti ma non si riesce a decifrarli. Potrebbero essere recuperabili da un backup del telefono: rimuovili solo se sei sicuro.</string>
@@ -68,7 +72,11 @@
     <string name="actions">Azioni</string>
     <string name="folder_screen_empty">Cartella vuota</string>
     <string name="folder_screen_empty_hint">Le scansioni salvate qui compariranno in questo elenco.</string>
-    <string name="fields_to_check">%1$d campi da verificare</string>
+    <plurals name="fields_to_check">
+        <item quantity="one">%1$d campo da verificare</item>
+        <item quantity="many">%1$d campi da verificare</item>
+        <item quantity="other">%1$d campi da verificare</item>
+    </plurals>
 
     <!-- Modalità di scansione -->
     <string name="mode_question">Cosa scansioni?</string>
@@ -129,8 +137,16 @@
     <string name="back_side">Retro</string>
     <string name="sheet_caption">A4 · %1$s %2$s × %3$s mm · %4$s</string>
     <string name="text_recognized">Testo riconosciuto su %1$s</string>
-    <string name="fields_summary">%1$d campi estratti sul telefono. Tocca un valore per correggerlo.</string>
-    <string name="fields_summary_review">%1$d campi estratti · %2$d da verificare. Tocca un valore per correggerlo.</string>
+    <plurals name="fields_summary">
+        <item quantity="one">%1$d campo estratto sul telefono. Tocca il valore per correggerlo.</item>
+        <item quantity="many">%1$d campi estratti sul telefono. Tocca un valore per correggerlo.</item>
+        <item quantity="other">%1$d campi estratti sul telefono. Tocca un valore per correggerlo.</item>
+    </plurals>
+    <plurals name="fields_summary_review">
+        <item quantity="one">%1$d campo estratto · %2$d da verificare. Tocca il valore per correggerlo.</item>
+        <item quantity="many">%1$d campi estratti · %2$d da verificare. Tocca un valore per correggerlo.</item>
+        <item quantity="other">%1$d campi estratti · %2$d da verificare. Tocca un valore per correggerlo.</item>
+    </plurals>
     <string name="needs_review">Da verificare — %1$d%% di certezza</string>
     <string name="no_fields">Nessun campo riconosciuto automaticamente. Il testo completo è nella scheda Testo, e da lì puoi aggiungere i campi che ti servono.</string>
     <string name="no_text">Nessun testo riconosciuto su questa scansione. Può dipendere da illuminazione, messa a fuoco o scrittura a mano.</string>
@@ -169,7 +185,6 @@
     <string name="theme_dark">Scuro</string>
     <string name="theme_system">Sistema</string>
     <string name="language">LINGUA</string>
-    <string name="language_system">Sistema</string>
     <string name="language_italian">Italiano</string>
     <string name="language_english">English</string>
     <string name="export_folder">CARTELLA DI ESPORTAZIONE</string>
@@ -183,12 +198,11 @@
     <!-- Documenti e pagine -->
     <plurals name="pages">
         <item quantity="one">%d pagina</item>
+        <item quantity="many">%d pagine</item>
         <item quantity="other">%d pagine</item>
     </plurals>
     <string name="one_a4_sheet">1 foglio A4 · fronte e retro</string>
     <string name="scan_default_name">Scansione</string>
-    <string name="identity_document">Documento d\'identità</string>
-    <string name="document_prefix">Documento · %1$s</string>
     <string name="unsorted">Da ordinare</string>
     <string name="folder_documents">Documenti e moduli</string>
     <string name="folder_cards">Carte</string>
@@ -230,20 +244,17 @@
     <string name="msg_page_deleted">Pagina eliminata</string>
     <string name="msg_renamed_to">Rinominato in %1$s</string>
     <string name="msg_moved_to">Spostato in %1$s</string>
-    <string name="msg_archive_cleared">Archivio svuotato</string>
     <string name="msg_pdf_failed">Non è stato possibile preparare il PDF</string>
     <string name="msg_pdf_unavailable">PDF non disponibile per questo documento</string>
     <string name="msg_scanner_unavailable">Scanner non disponibile: %1$s</string>
     <string name="msg_no_app">Nessuna app disponibile</string>
-    <string name="msg_purged">Rimossi %1$d file danneggiati</string>
+    <plurals name="msg_purged">
+        <item quantity="one">Rimosso %1$d file danneggiato</item>
+        <item quantity="many">Rimossi %1$d file danneggiati</item>
+        <item quantity="other">Rimossi %1$d file danneggiati</item>
+    </plurals>
     <string name="msg_default_folder">Cartella predefinita: %1$s</string>
     <string name="msg_save_failed">Salvataggio non riuscito: %1$s</string>
     <string name="msg_share_failed">Condivisione non riuscita: %1$s</string>
-    <string name="msg_retention">%1$d documenti rimossi per scadenza della conservazione</string>
-    <string name="wipe_archive_title">Svuotare l\'archivio?</string>
-    <string name="wipe_archive_body">Tutti i documenti e le scansioni verranno eliminati definitivamente.</string>
-    <string name="wipe_archive_confirm">Elimina tutto</string>
-    <string name="wipe">Svuota</string>
     <string name="rename_file">Rinomina file</string>
-    <string name="close_keyboard">Chiudi la tastiera</string>
 </resources>

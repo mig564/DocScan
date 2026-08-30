@@ -32,7 +32,10 @@
     <string name="actions">Actions</string>
     <string name="folder_screen_empty">Empty folder</string>
     <string name="folder_screen_empty_hint">Scans saved here will show up in this list.</string>
-    <string name="fields_to_check">%1$d fields to check</string>
+    <plurals name="fields_to_check">
+        <item quantity="one">%1$d field to check</item>
+        <item quantity="other">%1$d fields to check</item>
+    </plurals>
     <string name="mode_question">What are you scanning?</string>
     <string name="mode_document">Document</string>
     <string name="mode_document_desc">One or more pages in a single PDF</string>
@@ -85,8 +88,14 @@
     <string name="back_side">Back</string>
     <string name="sheet_caption">A4 · %1$s %2$s × %3$s mm · %4$s</string>
     <string name="text_recognized">Text recognised on %1$s</string>
-    <string name="fields_summary">%1$d fields extracted on your phone. Tap a value to correct it.</string>
-    <string name="fields_summary_review">%1$d fields extracted · %2$d to check. Tap a value to correct it.</string>
+    <plurals name="fields_summary">
+        <item quantity="one">%1$d field extracted on your phone. Tap the value to correct it.</item>
+        <item quantity="other">%1$d fields extracted on your phone. Tap a value to correct it.</item>
+    </plurals>
+    <plurals name="fields_summary_review">
+        <item quantity="one">%1$d field extracted · %2$d to check. Tap the value to correct it.</item>
+        <item quantity="other">%1$d fields extracted · %2$d to check. Tap a value to correct it.</item>
+    </plurals>
     <string name="needs_review">To check — %1$d%% confidence</string>
     <string name="no_fields">No fields recognised automatically. The full text is in the Text tab, and you can add the fields you need from there.</string>
     <string name="no_text">No text recognised on this scan. It can come down to lighting, focus or handwriting.</string>
@@ -121,7 +130,6 @@
     <string name="theme_dark">Dark</string>
     <string name="theme_system">System</string>
     <string name="language">LANGUAGE</string>
-    <string name="language_system">System</string>
     <string name="language_italian">Italiano</string>
     <string name="language_english">English</string>
     <string name="export_folder">EXPORT FOLDER</string>
@@ -133,8 +141,6 @@
     <string name="internal_storage">Internal storage</string>
     <string name="one_a4_sheet">1 A4 sheet · both sides</string>
     <string name="scan_default_name">Scan</string>
-    <string name="identity_document">Identity document</string>
-    <string name="document_prefix">Document · %1$s</string>
     <string name="unsorted">Unsorted</string>
     <string name="folder_documents">Documents and forms</string>
     <string name="folder_cards">Cards</string>
@@ -172,20 +178,17 @@
     <string name="msg_page_deleted">Page deleted</string>
     <string name="msg_renamed_to">Renamed to %1$s</string>
     <string name="msg_moved_to">Moved to %1$s</string>
-    <string name="msg_archive_cleared">Archive cleared</string>
     <string name="msg_pdf_failed">The PDF could not be prepared</string>
     <string name="msg_pdf_unavailable">No PDF available for this document</string>
     <string name="msg_scanner_unavailable">Scanner unavailable: %1$s</string>
     <string name="msg_no_app">No app available</string>
-    <string name="msg_purged">Removed %1$d damaged files</string>
+    <plurals name="msg_purged">
+        <item quantity="one">Removed %1$d damaged file</item>
+        <item quantity="other">Removed %1$d damaged files</item>
+    </plurals>
     <string name="msg_default_folder">Default folder: %1$s</string>
     <string name="msg_save_failed">Save failed: %1$s</string>
     <string name="msg_share_failed">Share failed: %1$s</string>
-    <string name="msg_retention">%1$d documents removed under the retention period</string>
-    <string name="wipe_archive_title">Clear the archive?</string>
-    <string name="wipe_archive_body">Every document and scan will be permanently deleted.</string>
-    <string name="wipe_archive_confirm">Delete everything</string>
-    <string name="wipe">Clear</string>
     <plurals name="scan_count">
         <item quantity="one">%d scan</item>
         <item quantity="other">%d scans</item>
@@ -207,5 +210,4 @@
         <item quantity="other">%d pages</item>
     </plurals>
     <string name="rename_file">Rename file</string>
-    <string name="close_keyboard">Close the keyboard</string>
 </resources>

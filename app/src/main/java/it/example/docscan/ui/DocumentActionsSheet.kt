@@ -3,26 +3,18 @@ package it.example.docscan.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DriveFileMove
 import androidx.compose.material.icons.filled.Delete
@@ -40,7 +32,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -50,7 +41,6 @@ import androidx.compose.ui.unit.dp
 import it.example.docscan.R
 import it.example.docscan.data.DocumentRecord
 import it.example.docscan.ui.theme.CornerMedium
-import it.example.docscan.ui.theme.CornerRound
 import it.example.docscan.ui.theme.DangerText
 import it.example.docscan.ui.theme.Accent
 import it.example.docscan.ui.theme.OnAccent
@@ -58,8 +48,6 @@ import it.example.docscan.ui.theme.OnSurface
 import it.example.docscan.ui.theme.OnSurfaceStrong
 import it.example.docscan.ui.theme.OnSurfaceVariant
 import it.example.docscan.ui.theme.Outline
-import it.example.docscan.ui.theme.Scrim
-import it.example.docscan.ui.theme.Surface
 import it.example.docscan.ui.theme.SurfaceContainer
 import it.example.docscan.ui.theme.TextBody
 import it.example.docscan.ui.theme.TextLabel
@@ -146,110 +134,72 @@ fun NameDialog(
     // significa mostrare "nome vuoto" prima che l'utente abbia scritto nulla.
     var error by remember(initial) { mutableStateOf<String?>(null) }
 
-    val focus = LocalFocusManager.current
+    AnimatedDialog(onDismiss = onDismiss) { dialog ->
+        // Confermare e premere invio fanno la stessa cosa: se il nome non va
+        // bene si mostra l'errore, altrimenti si chiude e la rinomina parte a
+        // uscita finita.
+        fun submit() {
+            val problem = validate(draft)
+            if (problem != null) error = problem else dialog.confirm { onConfirm(draft) }
+        }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            // safeDrawing tiene conto insieme di barre di sistema, ritaglio del
-            // display e tastiera. Sommare systemBarsPadding e imePadding contava
-            // due volte la barra di navigazione e il riquadro non saliva
-            // abbastanza.
-            .windowInsetsPadding(WindowInsets.safeDrawing),
-        contentAlignment = Alignment.Center,
-    ) {
+        Text(title, fontSize = TextSubtitle, fontWeight = FontWeight.Medium, color = OnSurface)
+        Spacer(Modifier.height(14.dp))
+
         Box(
             Modifier
-                .fillMaxSize()
-                .background(Scrim)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                ) { onDismiss() },
-        )
-        Column(
-            modifier = Modifier
-                .padding(horizontal = 28.dp)
                 .fillMaxWidth()
-                .clip(CornerRound)
-                .background(Surface)
-                // Consuma i tocchi: altrimenti un tap sulla scheda arriva allo
-                // scrim sottostante e chiude il dialogo.
-                // Toccare il riquadro fuori dal campo toglie il cursore
-                // lampeggiante e la tastiera, senza chiudere il dialogo.
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                ) { focus.clearFocus() }
-                // Su schermi bassi con la tastiera aperta il riquadro non ci
-                // starebbe: meglio scorrevole che tagliato.
-                .verticalScroll(rememberScrollState())
-                .padding(20.dp),
+                .height(50.dp)
+                .clip(CornerMedium)
+                .background(SurfaceContainer)
+                .padding(horizontal = 14.dp),
+            contentAlignment = Alignment.CenterStart,
         ) {
-            Text(title, fontSize = TextSubtitle, fontWeight = FontWeight.Medium, color = OnSurface)
-            Spacer(Modifier.height(14.dp))
+            BasicTextField(
+                value = draft,
+                onValueChange = { draft = it; error = null },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { submit() }),
+                textStyle = TextStyle(fontSize = TextBody, color = OnSurface),
+                cursorBrush = SolidColor(Accent),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
 
+        // Spazio riservato: il dialogo non deve cambiare altezza quando
+        // l'errore compare.
+        Box(Modifier.fillMaxWidth().height(26.dp), contentAlignment = Alignment.CenterStart) {
+            error?.let { Text(it, fontSize = TextLabel, color = DangerText) }
+        }
+
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Box(
-                Modifier
-                    .fillMaxWidth()
-                    .height(50.dp)
+                modifier = Modifier
+                    .weight(1f)
+                    .height(46.dp)
                     .clip(CornerMedium)
-                    .background(SurfaceContainer)
-                    .padding(horizontal = 14.dp),
-                contentAlignment = Alignment.CenterStart,
+                    .border(1.dp, Outline, CornerMedium)
+                    .clickable { dialog.dismiss() },
+                contentAlignment = Alignment.Center,
             ) {
-                BasicTextField(
-                    value = draft,
-                    onValueChange = { draft = it; error = null },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(onDone = {
-                        val problem = validate(draft)
-                        if (problem != null) error = problem else onConfirm(draft)
-                    }),
-                    textStyle = TextStyle(fontSize = TextBody, color = OnSurface),
-                    cursorBrush = SolidColor(Accent),
-                    modifier = Modifier.fillMaxWidth(),
+                Text(stringResource(R.string.cancel), fontSize = TextBody, color = OnSurfaceStrong)
+            }
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(46.dp)
+                    .clip(CornerMedium)
+                    .background(Accent)
+                    .clickable { submit() },
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    confirmLabel,
+                    fontSize = TextBody,
+                    fontWeight = FontWeight.Medium,
+                    color = OnAccent,
                 )
-            }
-
-            // Spazio riservato: il dialogo non deve cambiare altezza quando
-            // l'errore compare.
-            Box(Modifier.fillMaxWidth().height(26.dp), contentAlignment = Alignment.CenterStart) {
-                error?.let { Text(it, fontSize = TextLabel, color = DangerText) }
-            }
-
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(46.dp)
-                        .clip(CornerMedium)
-                        .border(1.dp, Outline, CornerMedium)
-                        .clickable(onClick = onDismiss),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(stringResource(R.string.cancel), fontSize = TextBody, color = OnSurfaceStrong)
-                }
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(46.dp)
-                        .clip(CornerMedium)
-                        .background(Accent)
-                        .clickable {
-                            val problem = validate(draft)
-                            if (problem != null) error = problem else onConfirm(draft)
-                        },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        confirmLabel,
-                        fontSize = TextBody,
-                        fontWeight = FontWeight.Medium,
-                        color = OnAccent,
-                    )
-                }
             }
         }
     }
