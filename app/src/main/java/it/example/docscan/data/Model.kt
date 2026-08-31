@@ -2,7 +2,7 @@ package it.example.docscan.data
 
 import kotlinx.serialization.Serializable
 
-/** Visual category of a document. Decides which placeholder preview is drawn. */
+/** Categoria visiva del documento: decide quale segnaposto disegnare in anteprima. */
 enum class DocKind { FORM, RECEIPT }
 
 /**

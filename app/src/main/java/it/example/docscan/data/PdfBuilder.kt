@@ -18,11 +18,11 @@ import kotlin.math.min
  */
 object PdfBuilder {
 
-    // A4 in PostScript points at 72 dpi.
+    // A4 in punti PostScript, a 72 dpi.
     private const val A4_SHORT = 595
     private const val A4_LONG = 842
 
-    /** Sampling width for pages: about 200 dpi on A4, readable without being huge. */
+    /** Campionamento delle pagine: circa 200 dpi su A4, leggibile senza pesare. */
     private const val RENDER_WIDTH = 1654
 
     /**

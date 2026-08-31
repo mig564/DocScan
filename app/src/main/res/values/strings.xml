@@ -111,7 +111,7 @@
 
     <!-- Foglio di salvataggio -->
     <string name="save_sheet_title">Salva %1$s</string>
-    <string name="save_sheet_subtitle">PDF · testo ricercabile · ~%1$s</string>
+    <string name="save_sheet_subtitle">PDF · testo ricercabile</string>
     <string name="dest_archive">Archivio DocScan</string>
     <string name="dest_archive_desc">Cifrato · scegli la cartella</string>
     <string name="dest_external">Esporta fuori dall\'app</string>

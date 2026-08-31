@@ -1,10 +1,11 @@
 package it.example.docscan.ui
 
 import android.app.Application
+import android.content.Context
 import android.content.res.Configuration
+import android.content.res.Resources
 import android.graphics.Bitmap
 import android.net.Uri
-import android.net.Uri as AndroidUri
 import androidx.annotation.PluralsRes
 import androidx.annotation.StringRes
 import androidx.lifecycle.AndroidViewModel
@@ -12,8 +13,8 @@ import androidx.lifecycle.viewModelScope
 import it.example.docscan.R
 import it.example.docscan.data.AccentColor
 import it.example.docscan.data.AppLanguage
-import it.example.docscan.data.CardStyle
 import it.example.docscan.data.AppSettings
+import it.example.docscan.data.CardStyle
 import it.example.docscan.data.DocKind
 import it.example.docscan.data.DocumentRecord
 import it.example.docscan.data.DocumentRepository
@@ -62,10 +63,6 @@ data class PendingScan(
 ) {
     val pageCount: Int get() = pageUris.size.coerceAtLeast(1)
     val selectedUri: Uri? get() = pageUris.getOrNull(selectedPage)
-
-    /** Stima grossolana, coerente con quella mostrata nel prototipo. */
-    /** Stima grossolana, coerente con quella mostrata nel prototipo. */
-    val fileSizeMb: Float get() = 0.34f + pageCount * 0.29f
 }
 
 data class UiState(
@@ -83,7 +80,7 @@ data class UiState(
     val toast: String? = null,
     val settings: AppSettings = AppSettings(),
     val showSettings: Boolean = false,
-    /** Foglio di scelta della modalita, aperto da "Scansiona". */
+    /** Foglio di scelta della modalità, aperto da "Scansiona". */
     val showScanModes: Boolean = false,
     val scanMode: ScanMode = ScanMode.DOCUMENT,
     /** Uri pronta da passare all'intent di condivisione; l'Activity la consuma. */
@@ -91,9 +88,9 @@ data class UiState(
     /** Cartella aperta a schermo intero, con i documenti in righe. */
     val openFolder: Folder? = null,
     val sortField: SortField = SortField.MODIFIED,
-    /** Predefinito: piu recenti in cima, come nella libreria. */
+    /** Predefinito: più recenti in cima, come nella libreria. */
     val sortAscending: Boolean = false,
-    /** Documento su cui e stata fatta una pressione lunga. */
+    /** Documento su cui è stata fatta una pressione lunga. */
     val actionsFor: DocumentRecord? = null,
     /** File dell'archivio che non si riesce a decifrare o interpretare. */
     val unreadable: List<String> = emptyList(),
@@ -135,33 +132,29 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /**
-     * Unico punto di caricamento dei documenti. Registra anche i file
-     * illeggibili, così nessun percorso può dimenticarsene.
-     */
-    /**
-     * Testo localizzato per i messaggi del ViewModel.
+     * Context con la lingua scelta dall'utente.
      *
-     * Qui `stringResource` non esiste: non siamo in una composizione. Si
-     * costruisce un Context con la lingua scelta, così i messaggi seguono
-     * l'impostazione come il resto dell'interfaccia.
+     * Qui `stringResource` non esiste: non siamo in una composizione. Ogni testo
+     * costruito dal ViewModel deve passare da qui, altrimenti seguirebbe la
+     * lingua di sistema invece di quella impostata nell'app.
+     *
+     * Con "Sistema" restituisce il Context di partenza, senza costruirne uno
+     * nuovo a vuoto.
      */
-    /** Resources con la lingua scelta, per le etichette costruite qui. */
-    private fun res(): android.content.res.Resources {
+    private fun localizedContext(): Context {
         val base = getApplication<Application>()
-        val tag = _state.value.settings.language.tag ?: return base.resources
+        val tag = _state.value.settings.language.tag ?: return base
         val locale = Locale.forLanguageTag(tag)
         val config = Configuration(base.resources.configuration).apply { setLocale(locale) }
-        return base.createConfigurationContext(config).resources
+        return base.createConfigurationContext(config)
     }
 
+    /** Resources con la lingua scelta, per le etichette costruite qui. */
+    private fun res(): Resources = localizedContext().resources
+
+    /** Stringa localizzata, con o senza segnaposto. */
     private fun str(@StringRes id: Int, vararg args: Any): String {
-        val base = getApplication<Application>()
-        val tag = _state.value.settings.language.tag
-        val ctx = if (tag == null) base else {
-            val locale = Locale.forLanguageTag(tag)
-            val config = Configuration(base.resources.configuration).apply { setLocale(locale) }
-            base.createConfigurationContext(config)
-        }
+        val ctx = localizedContext()
         return if (args.isEmpty()) ctx.getString(id) else ctx.getString(id, *args)
     }
 
@@ -169,21 +162,15 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
      * Come [str] ma per i plurali, che vanno risolti con la quantità.
      *
      * Serve una funzione a parte perché il ViewModel non è composable e non può
-     * usare pluralStringResource: deve passare dallo stesso contesto con la
-     * lingua scelta dall'utente, altrimenti i messaggi uscirebbero nella lingua
-     * di sistema invece che in quella dell'app.
+     * usare `pluralStringResource`.
      */
-    private fun plural(@PluralsRes id: Int, count: Int, vararg args: Any): String {
-        val base = getApplication<Application>()
-        val tag = _state.value.settings.language.tag
-        val ctx = if (tag == null) base else {
-            val locale = Locale.forLanguageTag(tag)
-            val config = Configuration(base.resources.configuration).apply { setLocale(locale) }
-            base.createConfigurationContext(config)
-        }
-        return ctx.resources.getQuantityString(id, count, *args)
-    }
+    private fun plural(@PluralsRes id: Int, count: Int, vararg args: Any): String =
+        localizedContext().resources.getQuantityString(id, count, *args)
 
+    /**
+     * Unico punto di caricamento dei documenti. Registra anche i file
+     * illeggibili, così nessun percorso può dimenticarsene.
+     */
     private suspend fun loadRecords(): List<DocumentRecord> {
         val archive = runCatching { repo.loadArchive() }
             .getOrDefault(DocumentRepository.ArchiveContents(emptyList(), emptyList()))
@@ -209,7 +196,7 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
         _state.update { it.copy(openDoc = record, screen = Screen.DETAIL) }
 
     /**
-     * Back gerarchico: chiude prima l'overlay piu interno, e da un documento
+     * Back gerarchico: chiude prima l'overlay più interno, e da un documento
      * aperto dentro una cartella torna alla cartella, non alla libreria.
      */
     fun goBack() {
@@ -317,7 +304,7 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
     fun folderDocuments(s: UiState): List<DocumentRecord> {
         val folder = s.openFolder ?: return emptyList()
         val matching = repo.search(s.records, s.query)
-        // "Scansioni recenti" e' una vista, non una cartella: nessun documento
+        // "Scansioni recenti" è una vista, non una cartella: nessun documento
         // ha quel folderId, quindi filtrarci sopra darebbe sempre zero risultati.
         val docs = if (folder.id == FOLDER_SEARCH) {
             matching
@@ -385,13 +372,19 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
      * Errore da mostrare nel dialogo, null se il nome va bene. Sta qui perché è
      * il ViewModel a conoscere le cartelle, e la regola serve identica a
      * creazione e rinomina.
+     *
+     * Il confronto è sul nome mostrato, non sul campo `name`: le cartelle
+     * predefinite hanno `name` vuoto e il nome vero nella chiave tradotta.
+     * Confrontando il campo grezzo, "Fatture" passava il controllo del dialogo
+     * e poi veniva rifiutato dal repository con un messaggio generico.
      */
     fun folderNameError(name: String, exceptId: String? = null): String? {
         val clean = name.trim()
+        val res = res()
         return when {
             clean.isBlank() -> str(R.string.msg_name_empty)
             _state.value.folders.any {
-                it.id != exceptId && it.name.trim().equals(clean, ignoreCase = true)
+                it.id != exceptId && folderName(res, it).trim().equals(clean, ignoreCase = true)
             } -> str(R.string.msg_name_taken)
             else -> null
         }
@@ -633,7 +626,7 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
      * riaprire il selettore. Se il permesso non è più valido lo dice e tiene
      * comunque il documento in archivio, invece di perdere la scansione.
      */
-    fun exportToDefaultFolder(treeUri: AndroidUri) {
+    fun exportToDefaultFolder(treeUri: Uri) {
         val pending = _state.value.pending ?: return
         viewModelScope.launch {
             _state.update { it.copy(exportStage = ExportStage.BUSY) }
@@ -766,9 +759,16 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
     suspend fun pageBitmap(record: DocumentRecord, index: Int = 0): Bitmap? =
         repo.pageBitmap(record, index)
 
-    /** Tutti i campi come testo, una riga per campo nel formato "etichetta: valore". */
-    fun copyAllText(record: DocumentRecord): String =
-        record.fields.joinToString("\n") { "${it.label}: ${it.value}" }
+    /**
+     * Tutti i campi come testo, una riga per campo nel formato "etichetta: valore".
+     *
+     * Le etichette passano da [fieldLabel]: nel record sono chiavi, e senza
+     * questo passaggio negli appunti finiva `field_total: € 2.480,00`.
+     */
+    fun copyAllText(record: DocumentRecord): String {
+        val res = res()
+        return record.fields.joinToString("\n") { "${fieldLabel(res, it.label)}: ${it.value}" }
+    }
 
     // ------------------------------------------------- Archivio danneggiato
 
@@ -798,9 +798,11 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
     /**
      * Rinomina una cartella.
      *
-     * Aggiorna anche il filtro attivo e la cartella eventualmente aperta, che
-     * puntano al nome vecchio: senza, dopo la rinomina la libreria apparirebbe
-     * vuota. Non fa nulla se il nome è vuoto o già usato.
+     * Aggiorna anche la copia della cartella eventualmente aperta, che porta
+     * ancora il nome vecchio: la schermata legge da lì per il titolo. Il filtro
+     * non va toccato, perché lavora sugli id e una rinomina non lo invalida.
+     *
+     * Non fa nulla se il nome è vuoto o già usato.
      */
     fun renameFolder(folder: Folder, newName: String) {
         viewModelScope.launch {
@@ -814,9 +816,9 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
                 it.copy(
                     folders = folders,
                     renamingFolder = null,
-                    // Il filtro attivo puntava al vecchio nome: senza questo
-                    // l'utente si ritrova una libreria vuota dopo la rinomina.
-                    // Il filtro lavora sugli id: rinominare non lo invalida più.
+                    // La cartella aperta è una copia scattata all'apertura:
+                    // senza questo aggiornamento l'intestazione continuerebbe a
+                    // mostrare il nome vecchio finché non si esce e si rientra.
                     openFolder = if (it.openFolder?.id == folder.id)
                         it.openFolder.copy(name = clean) else it.openFolder,
                     toast = str(R.string.msg_folder_renamed),
@@ -850,7 +852,7 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    // -------------------------------------------------- Modalita scansione
+    // -------------------------------------------------- Modalità scansione
 
     /** Apre il pannello con le modalità di scansione. */
     fun openScanModes() = _state.update { it.copy(showScanModes = true) }
@@ -859,7 +861,7 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
     /** Cambia modalità: documento, tessera o passaporto. */
     fun setScanMode(mode: ScanMode) = _state.update { it.copy(scanMode = mode) }
 
-    /** Testo del pulsante: le modalita a due facciate dichiarano il passo. */
+    /** Testo del pulsante: le modalità a due facciate dichiarano il passo. */
     fun scanButtonLabel(s: UiState): String = when {
         !s.scanMode.isTwoSided -> str(R.string.scan)
         s.pending == null || s.pending.pageUris.isEmpty() -> str(R.string.scan_front)
@@ -867,7 +869,7 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /**
-     * Didascalia sempre presente: quando compariva solo nelle modalita a due
+     * Didascalia sempre presente: quando compariva solo nelle modalità a due
      * facciate, il pannello cambiava altezza passando da una all'altra.
      */
     fun scanStepLabel(s: UiState): String = when {
@@ -877,8 +879,12 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /**
-     * Nelle modalita a due facciate il numero di pagine e' fissato a due: una
-     * terza non avrebbe posto sul foglio.
+     * Limite di pagine per singola sessione dello scanner.
+     *
+     * Nelle modalità a due facciate è una: fronte e retro si acquisiscono in due
+     * sessioni distinte, così ciascuno finisce nel proprio riquadro del foglio.
+     * Il totale resta quindi due, e una terza facciata non avrebbe comunque
+     * posto sull'A4.
      */
     fun pageLimitForMode(): Int = if (_state.value.scanMode.isTwoSided) 1 else 10
 
@@ -899,8 +905,8 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
     // ------------------------------------------------------- Condivisione
 
     /**
-     * Condivide un documento gia in archivio (dalla schermata di dettaglio).
-     * La Uri finisce nello stato: l'Activity la consuma e lancia l'intent, cosi
+     * Condivide un documento già in archivio (dalla schermata di dettaglio).
+     * La Uri finisce nello stato: l'Activity la consuma e lancia l'intent, così
      * il ViewModel non ha bisogno di conoscere il Context dell'Activity.
      */
     fun shareDocument(record: DocumentRecord) {
@@ -982,8 +988,8 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
         _state.update { it.copy(settings = next) }
     }
 
-    /** [label] arriva gia leggibile dall'Activity, che sa interrogare SAF. */
-    fun setDefaultFolder(uri: AndroidUri, label: String) {
+    /** [label] arriva già leggibile dall'Activity, che sa interrogare SAF. */
+    fun setDefaultFolder(uri: Uri, label: String) {
         val next = _state.value.settings.copy(
             defaultFolderUri = uri.toString(),
             defaultFolderLabel = label,
@@ -1004,7 +1010,7 @@ class DocScanViewModel(app: Application) : AndroidViewModel(app) {
         _state.update { it.copy(settings = next) }
     }
 
-    /** Null se non c'e una cartella fissa: il chiamante apre il selettore. */
+    /** Null se non c'è una cartella fissa: il chiamante apre il selettore. */
     fun defaultFolderUri(): String? = _state.value.settings.defaultFolderUri
 
     // ------------------------------------------------------------------ Varie

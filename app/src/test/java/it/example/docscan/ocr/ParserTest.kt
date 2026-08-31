@@ -104,7 +104,7 @@ class ParserTest {
         val fields = FieldExtractor.extract(fattura).fields
 
         assertEquals("ML-2026-0418", fields.first { it.label == "field_document_number" }.value)
-        // Il totale viene dall'etichetta, non dall'importo piu alto: qui le due
+        // Il totale viene dall'etichetta, non dall'importo più alto: qui le due
         // cose coincidono, ma l'imponibile deve restare un campo distinto.
         assertEquals("\u20AC 2.480,00", fields.first { it.label == "field_total" }.value)
         assertEquals("\u20AC 2.032,79", fields.first { it.label == "field_taxable" }.value)
@@ -142,11 +142,71 @@ class ParserTest {
     fun `date impossibili vengono rifiutate`() {
         val doc = listOf("Ricevuta n. 5", "Totale 10,00", "Data 45/19/2026")
         val fields = FieldExtractor.extract(doc).fields
-        assertFalse(fields.any { it.label == "Data emissione" })
+        assertFalse(fields.any { it.label == "field_issue_date" })
     }
 
     @Test
-    fun `su un documento d'identita non inventa campi commerciali`() {
+    fun `l'imposta non si prende il totale della riga sotto`() {
+        // Regressione: "partita iva" contiene "iva", quindi anche l'etichetta
+        // dell'imposta matchava questa riga. Non trovando un importo accanto a
+        // sé, scendeva di una riga e si portava via il totale.
+        val fattura = listOf("Acme Srl", "Fattura n. 7", "Partita IVA 12345678903", "Totale 2.480,00")
+
+        val fields = FieldExtractor.extract(fattura).fields
+
+        assertFalse(fields.any { it.label == "field_vat" })
+        assertEquals("\u20AC 2.480,00", fields.first { it.label == "field_total" }.value)
+    }
+
+    @Test
+    fun `un numero documento di una sola cifra viene riconosciuto`() {
+        // Regressione: il numero era troppo corto per la regex, quindi il campo
+        // scendeva alla riga successiva e si prendeva la partita IVA. Il numero
+        // documento non ha cifra di controllo: qualsiasi cosa peschi, ci crede.
+        val fattura = listOf("Acme Srl", "Fattura n. 7", "Partita IVA 12345678903", "Totale 2.480,00")
+
+        val fields = FieldExtractor.extract(fattura).fields
+
+        assertEquals("7", fields.first { it.label == "field_document_number" }.value)
+    }
+
+    @Test
+    fun `i campi MRZ escono con chiavi traducibili`() {
+        // Regressione: numero documento, data di nascita e scadenza avevano
+        // l'etichetta scritta a mano in italiano, e restavano in italiano con
+        // l'app in inglese.
+        val cie = listOf(
+            "RSSMRA85T10A562S",
+            "P<UTOERIKSSON<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<",
+            "L898902C36UTO7408122F1204159ZE184226B<<<<<10",
+        )
+
+        val fields = FieldExtractor.extract(cie).fields
+
+        assertTrue(fields.any { it.label == "field_document_number" })
+        assertTrue(fields.any { it.label == "field_birth_date" })
+        assertTrue(fields.any { it.label == "field_expiry" })
+    }
+
+    @Test
+    fun `le reti di sicurezza non duplicano i campi già trovati`() {
+        // Regressione: le due guardie confrontavano "Totale" e "IBAN" con un
+        // insieme che contiene le chiavi field_*, quindi non scattavano mai e
+        // il ripiego girava anche quando l'etichetta era già stata letta.
+        val fattura = listOf(
+            "Fattura n. 12",
+            "Totale 2.480,00",
+            "IBAN IT60 X054 2811 1010 0000 0123 456",
+        )
+
+        val fields = FieldExtractor.extract(fattura).fields
+
+        assertEquals(1, fields.count { it.label == "field_total" })
+        assertEquals(1, fields.count { it.label == "field_iban" })
+    }
+
+    @Test
+    fun `su un documento d'identità non inventa campi commerciali`() {
         val cie = listOf(
             "REPUBBLICA ITALIANA",
             "RSSMRA85T10A562S",
@@ -174,7 +234,7 @@ class ParserTest {
         )
         val result = FieldExtractor.extract(carta)
 
-        // Il PAN non deve finire ne' nei campi ne' nel testo ricercabile.
+        // Il PAN non deve finire nè nei campi nè nel testo ricercabile.
         assertFalse(result.fields.any { it.value.contains("4539") })
         assertFalse(result.searchableText.contains("4539"))
         // Le ultime quattro cifre restano: servono a riconoscere la carta e da

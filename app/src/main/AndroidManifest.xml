@@ -17,9 +17,14 @@
       dall'utente.
     -->
 
+    <!--
+      required="false": la fotocamera è la via normale, ma lo scanner accetta
+      anche l'import dalla galleria. Con required="true" Play nasconderebbe
+      l'app ai dispositivi senza fotocamera, che potrebbero comunque usarla.
+    -->
     <uses-feature
         android:name="android.hardware.camera"
-        android:required="true" />
+        android:required="false" />
 
     <application
         android:allowBackup="false"

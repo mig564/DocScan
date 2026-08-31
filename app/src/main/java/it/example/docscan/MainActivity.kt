@@ -60,7 +60,7 @@ class MainActivity : ComponentActivity() {
      */
     private fun scannerOptions(pageLimit: Int) = GmsDocumentScannerOptions.Builder()
         .setScannerMode(GmsDocumentScannerOptions.SCANNER_MODE_FULL)
-        .setGalleryImportAllowed(false)
+        .setGalleryImportAllowed(true)
         .setPageLimit(pageLimit)
         .setResultFormats(GmsDocumentScannerOptions.RESULT_FORMAT_JPEG)
         .build()
@@ -337,7 +337,7 @@ class MainActivity : ComponentActivity() {
 
     /**
      * I PDF decifrati per la condivisione non sopravvivono al rientro nell'app.
-     * Se l'utente ha gia condiviso, la copia e' partita; se ha annullato, sparisce.
+     * Se l'utente ha già condiviso, la copia è partita; se ha annullato, sparisce.
      */
     override fun onResume() {
         super.onResume()

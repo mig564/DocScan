@@ -43,8 +43,14 @@ object FieldExtractor {
 
     private val IBAN = Regex("""\bIT\d{2}(?:\s?[A-Z0-9]){23}\b""", RegexOption.IGNORE_CASE)
 
-    /** Un numero documento contiene sempre almeno una cifra. */
-    private val DOC_NUMBER = Regex("""\b(?=[A-Za-z0-9/\-]*\d)[A-Za-z0-9][A-Za-z0-9/\-]{2,}\b""")
+    /**
+     * Un numero documento contiene sempre almeno una cifra: è il lookahead a
+     * garantirlo, e serve a non prendere le parole comuni.
+     *
+     * Nessuna lunghezza minima: "Fattura n. 7" è un numero documento valido, e
+     * chiedendo tre caratteri veniva scartato.
+     */
+    private val DOC_NUMBER = Regex("""\b(?=[A-Za-z0-9/\-]*\d)[A-Za-z0-9][A-Za-z0-9/\-]*\b""")
 
     private val DATE = Regex("""\b(\d{1,2})[./\-](\d{1,2})[./\-](\d{2,4})\b""")
 
@@ -70,16 +76,24 @@ object FieldExtractor {
 
     private enum class ValueKind { AMOUNT, DATE, DOC_NUMBER, VAT, IBAN_VALUE }
 
+    /**
+     * L'ordine conta due volte.
+     *
+     * Fra le chiavi di una stessa etichetta: "totale documento" va prima di
+     * "totale", altrimenti la chiave più corta vince sempre.
+     *
+     * Fra le etichette: "partita iva" va prima di "iva", che altrimenti la
+     * intercetta. Su una fattura reale la riga sotto la partita IVA è spesso
+     * il totale, e l'imposta finiva per prendersi quell'importo.
+     */
     private val LABELS = listOf(
-        // L'ordine conta: "totale documento" prima di "totale", altrimenti la
-        // chiave più corta vincerebbe sempre.
         Label("field_total", listOf("totale documento", "totale da pagare", "importo totale", "totale complessivo", "totale"), ValueKind.AMOUNT),
         Label("field_taxable", listOf("imponibile", "subtotale"), ValueKind.AMOUNT),
+        Label("field_vat_number", listOf("partita iva", "p. iva", "p.iva", "piva"), ValueKind.VAT),
         Label("field_vat", listOf("iva", "imposta"), ValueKind.AMOUNT),
         Label("field_document_number", listOf("fattura n", "fattura numero", "documento n", "ricevuta n", "numero documento", "n. fattura"), ValueKind.DOC_NUMBER),
         Label("field_issue_date", listOf("data emissione", "data documento", "data fattura", "data"), ValueKind.DATE),
         Label("field_expiry", listOf("scadenza", "pagamento entro", "da pagare entro"), ValueKind.DATE),
-        Label("field_vat_number", listOf("partita iva", "p. iva", "p.iva", "piva"), ValueKind.VAT),
         Label("field_iban", listOf("iban", "coordinate bancarie"), ValueKind.IBAN_VALUE),
     )
 
@@ -161,15 +175,15 @@ object FieldExtractor {
             if (m.surname.isNotBlank()) fields += ExtractedField("field_surname", m.surname, c)
             if (m.givenNames.isNotBlank()) fields += ExtractedField("field_given_names", m.givenNames, c)
             fields += ExtractedField(
-                "Numero documento", m.documentNumber.value,
+                "field_document_number", m.documentNumber.value,
                 if (m.documentNumber.checksumValid) 1f else 0.58f,
             )
             fields += ExtractedField(
-                "Data di nascita", ItalianDocumentParser.formatMrzDate(m.birthDate.value),
+                "field_birth_date", ItalianDocumentParser.formatMrzDate(m.birthDate.value),
                 if (m.birthDate.checksumValid) 1f else 0.58f,
             )
             fields += ExtractedField(
-                "Scadenza", ItalianDocumentParser.formatMrzDate(m.expiryDate.value),
+                "field_expiry", ItalianDocumentParser.formatMrzDate(m.expiryDate.value),
                 if (m.expiryDate.checksumValid) 1f else 0.58f,
             )
             if (m.nationality.isNotBlank()) fields += ExtractedField("field_nationality", m.nationality, c)
@@ -203,35 +217,53 @@ object FieldExtractor {
 
         lines.forEachIndexed { index, line ->
             val lower = line.lowercase()
+            // Vero appena un'etichetta ha preso il suo valore da questa riga.
+            var consumed = false
+
             for (label in LABELS) {
                 if (label.name in usedLabels) continue
                 val key = label.keys.firstOrNull { lower.contains(it) } ?: continue
 
-                // Il valore sta dopo l'etichetta sulla stessa riga; se lì non
-                // c'è, guardiamo la riga successiva (layout a due colonne).
                 val after = line.substring(
                     (lower.indexOf(key) + key.length).coerceAtMost(line.length),
                 )
+                // Il valore sta dopo l'etichetta sulla stessa riga. Se lì non
+                // c'è si guarda la riga sotto, perché nei layout a due colonne
+                // il valore scende — ma solo se la riga corrente non ha già
+                // dato qualcosa a qualcun altro. Senza questa guardia, su
+                //
+                //     Partita IVA 12345678903
+                //     Totale        2.480,00
+                //
+                // l'imposta non trovava un importo accanto a "iva" e si
+                // prendeva il totale della riga sotto.
+                // Il numero documento non ha cifra di controllo, quindi qualsiasi
+                // cosa peschi viene creduta. Sta sempre accanto alla sua
+                // etichetta ("Fattura n. 7"), quindi lo cerchiamo solo lì: dalla
+                // riga sotto si prendeva la partita IVA.
+                val canLookAhead = !consumed && label.kind != ValueKind.DOC_NUMBER
+                val nextLine = if (canLookAhead) lines.getOrNull(index + 1) else null
                 val value = valueFrom(after, label.kind)
-                    ?: lines.getOrNull(index + 1)?.let { valueFrom(it, label.kind) }
+                    ?: nextLine?.let { valueFrom(it, label.kind) }
                     ?: continue
 
                 found += ExtractedField(label.name, value.text, value.confidence)
                 usedLabels += label.name
+                consumed = true
             }
         }
 
         // Rete di sicurezza: documento commerciale senza riga "Totale"
         // riconosciuta, ma con importi in pagina. L'importo più alto è quasi
         // sempre il totale — quasi, quindi confidenza bassa e dichiarata.
-        if ("Totale" !in usedLabels) {
+        if ("field_total" !in usedLabels) {
             val amounts = AMOUNT.findAll(joined).map { it.value }.toList()
             amounts.maxByOrNull { parseAmount(it) }?.let {
                 found += ExtractedField("field_total", "€ $it", 0.55f)
             }
         }
         // Un IBAN valido è autoverificante: vale anche senza etichetta.
-        if ("IBAN" !in usedLabels) {
+        if ("field_iban" !in usedLabels) {
             IBAN.find(joined)?.value?.replace(" ", "")?.let { iban ->
                 if (isIbanValid(iban)) found += ExtractedField("field_iban", formatIban(iban), 1f)
             }
@@ -256,7 +288,7 @@ object FieldExtractor {
         }
 
         ValueKind.DOC_NUMBER -> {
-            val stripped = fragment.trimStart(':', '.', '°', 'n', 'N', ' ', '\u00B0')
+            val stripped = fragment.trimStart(':', '.', '°', 'n', 'N', ' ')
             DOC_NUMBER.find(stripped)?.value?.let { Value(it, 0.8f) }
         }
 

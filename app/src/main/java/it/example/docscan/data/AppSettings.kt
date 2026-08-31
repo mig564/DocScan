@@ -61,7 +61,7 @@ data class AppSettings(
 /**
  * Le impostazioni stanno in SharedPreferences, non nell'archivio cifrato: non
  * sono contenuto dei documenti, e il tema va letto in modo sincrono prima della
- * prima composizione, altrimenti l'app lampeggia in chiaro per un frame.
+ * prima composizione, altrimenti l'app lampeggià in chiaro per un frame.
  */
 class SettingsStore(private val context: Context) {
 
@@ -115,7 +115,7 @@ class SettingsStore(private val context: Context) {
         }
     }
 
-    /** Da `primary:Download/Scansioni` a `Download > Scansioni`. */
+    /** Da `primary:Download/Scansioni` a `Download › Scansioni`. */
     fun prettyLabel(treeDocumentId: String?): String {
         if (treeDocumentId.isNullOrBlank()) return context.getString(R.string.no_folder_chosen)
         val path = treeDocumentId.substringAfter(':', treeDocumentId)

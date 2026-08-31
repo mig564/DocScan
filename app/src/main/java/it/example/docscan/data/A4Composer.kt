@@ -24,7 +24,7 @@ import kotlin.math.roundToInt
  */
 object A4Composer {
 
-    /** One millimetre in PostScript points at 72 dpi. */
+    /** Un millimetro in punti PostScript, a 72 dpi. */
     private const val MM_TO_PT = 72f / 25.4f
 
     private const val A4_WIDTH_MM = 210f
@@ -36,7 +36,7 @@ object A4Composer {
     /** Distanza verticale fra le due facciate. */
     const val GAP_MM = 12f
 
-    /** Image sampling width: roughly 300 dpi at card size. */
+    /** Larghezza di campionamento: circa 300 dpi alle dimensioni di una carta. */
     private const val RENDER_WIDTH = 1200
 
     /** Rettangolo di una facciata sul foglio, in millimetri dall'angolo alto-sinistra. */

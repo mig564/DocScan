@@ -15,8 +15,8 @@ import androidx.compose.ui.unit.sp
  * appena diverso da quello accanto, l'occhio non trova nessun ordine a cui
  * appoggiarsi, e legge il tutto come una serie di scelte automatiche.
  *
- * Da qui in poi: tre raggi e sei corpi. Se serve un valore nuovo, quasi sempre
- * vuol dire che il posto giusto è uno di questi.
+ * Da qui in poi: cinque raggi e sei corpi. Se serve un valore nuovo, quasi
+ * sempre vuol dire che il posto giusto è uno di questi.
  */
 
 // ---------------------------------------------------------------- Raggi

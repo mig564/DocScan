@@ -181,7 +181,7 @@ object ItalianDocumentParser {
         )
     }
 
-    /** ICAO 9303 check digit: repeating weights of 7, 3 and 1. */
+    /** Cifra di controllo ICAO 9303: pesi 7, 3 e 1 che si ripetono. */
     fun checkDigit(field: String): Char {
         val weights = intArrayOf(7, 3, 1)
         var sum = 0
@@ -196,7 +196,7 @@ object ItalianDocumentParser {
         return '0' + (sum % 10)
     }
 
-    /** MRZ YYMMDD to a readable date. Years 00-30 map to 2000s, the rest to 1900s. */
+    /** Da YYMMDD della MRZ a data leggibile. Gli anni 00-30 sono 2000, gli altri 1900. */
     fun formatMrzDate(yymmdd: String): String {
         if (yymmdd.length != 6 || !yymmdd.all { it.isDigit() }) return yymmdd
         val yy = yymmdd.substring(0, 2).toInt()

@@ -107,7 +107,6 @@ import it.example.docscan.ui.theme.TextLabel
 import it.example.docscan.ui.theme.TextMeta
 import it.example.docscan.ui.theme.TextSubtitle
 import it.example.docscan.ui.theme.TextTitle
-import java.util.Locale
 
 // Altezze della fascia in fondo, dichiarate qui e non misurate a runtime.
 // Lo spazio che la colonna riserva sotto di sé deve restare identico anche
@@ -658,7 +657,7 @@ private fun BottomActions(enabled: Boolean, onSave: () -> Unit, onShare: () -> U
             .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 14.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        // Condividi e' un'azione alla pari del salvataggio, non una
+        // Condividi è un'azione alla pari del salvataggio, non una
         // destinazione: sta accanto al pulsante, non sepolta nel foglio.
         Row(
             modifier = Modifier
@@ -724,7 +723,7 @@ private fun ExportSheet(
                 ExportStage.DESTINATIONS -> {
                     Text(stringResource(R.string.save_sheet_title, pendingPageLabel(pending.pageCount, pending.scanMode.isTwoSided)), fontSize = TextTitle, color = OnSurface)
                     Text(
-                        stringResource(R.string.save_sheet_subtitle, String.format(Locale.getDefault(), "%.1f MB", pending.fileSizeMb)),
+                        stringResource(R.string.save_sheet_subtitle),
                         fontSize = TextLabel,
                         color = OnSurfaceVariant,
                         modifier = Modifier.padding(bottom = 16.dp),

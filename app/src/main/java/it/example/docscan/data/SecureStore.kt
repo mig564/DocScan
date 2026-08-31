@@ -45,7 +45,7 @@ class SecureStore(private val context: Context) {
     private val key: SecretKey by lazy { getOrCreateKey() }
 
     /**
-     * Chiave AES-256 dell'archivio: la prende dal Keystore o la genera al primo uso.
+     * La prende dal Keystore, o la genera al primo avvio.
      *
      * La chiave non esce mai dal Keystore. Si cifra e decifra passandogli i dati,
      * non recuperandola, quindi un archivio copiato su un altro telefono resta
@@ -118,5 +118,4 @@ class SecureStore(private val context: Context) {
 
     /** Cancella [fileName]. @return false se non c'era. */
     fun delete(fileName: String): Boolean = File(dir, fileName).delete()
-
 }

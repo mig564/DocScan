@@ -64,7 +64,7 @@
     <string name="add_pages">Add pages</string>
     <string name="remove_page">Delete page</string>
     <string name="save_sheet_title">Save %1$s</string>
-    <string name="save_sheet_subtitle">PDF · searchable text · ~%1$s</string>
+    <string name="save_sheet_subtitle">PDF · searchable text</string>
     <string name="dest_archive">DocScan archive</string>
     <string name="dest_archive_desc">Encrypted · choose the folder</string>
     <string name="dest_external">Export out of the app</string>

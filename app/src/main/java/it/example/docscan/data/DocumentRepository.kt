@@ -146,8 +146,11 @@ class DocumentRepository(private val context: Context) {
         else -> R.string.unsorted
     }
 
-    /** Rinomina conservando la posizione: l'ordine non deve cambiare da solo. */
-    /** Null se il nome è vuoto o già usato da un'altra cartella. */
+    /**
+     * Rinomina conservando la posizione: l'ordine non deve cambiare da solo.
+     *
+     * @return null se il nome è vuoto o già usato da un'altra cartella
+     */
     suspend fun renameFolder(folderId: String, newName: String): List<Folder>? {
         val clean = newName.trim()
         if (clean.isBlank() || folderNameTaken(clean, exceptId = folderId)) return null
@@ -213,9 +216,12 @@ class DocumentRepository(private val context: Context) {
      */
     suspend fun purgeUnreadable(metaFiles: List<String>): Int = withContext(Dispatchers.IO) {
         var removed = 0
+        // Un'unica lettura della cartella: rileggerla a ogni metadato costava
+        // una scansione del filesystem per file rotto.
+        val all = store.list()
         for (meta in metaFiles) {
             val id = meta.removeSuffix(META_SUFFIX)
-            store.list().filter { it.startsWith("$id.") }.forEach {
+            all.filter { it.startsWith("$id.") }.forEach {
                 if (store.delete(it)) removed++
             }
         }
@@ -428,18 +434,15 @@ class DocumentRepository(private val context: Context) {
     }
 
     /**
-     * Prepara il PDF per la condivisione.
-     *
-     * La copia in chiaro vive in cacheDir/condivisi e viene cancellata al
-     * rientro nell'app. Una volta inviata a un'altra app non è più controllabile.
-     */
-    /**
      * PDF di una scansione non ancora salvata, pronto da condividere.
      *
      * Non tocca l'archivio: niente cifratura delle pagine, niente metadati. Chi
      * condivide vuole mandare il documento, non necessariamente conservarlo, e
      * salvarlo comunque significherebbe farlo aspettare per un lavoro che non ha
      * chiesto.
+     *
+     * La copia in chiaro vive in cacheDir/condivisi e viene cancellata al
+     * rientro nell'app: vedi [clearShareCache].
      */
     suspend fun pdfForSharing(
         pageUris: List<Uri>,
@@ -461,6 +464,12 @@ class DocumentRepository(private val context: Context) {
         }.getOrNull()
     }
 
+    /**
+     * PDF di un documento già in archivio, decifrato in una copia condivisibile.
+     *
+     * Vale lo stesso avvertimento dell'altra forma: la copia è in chiaro, sta
+     * in cacheDir/condivisi e sparisce al rientro nell'app.
+     */
     suspend fun pdfForSharing(record: DocumentRecord): Uri? = withContext(Dispatchers.IO) {
         val pdfName = record.pdfFile ?: return@withContext null
         runCatching {

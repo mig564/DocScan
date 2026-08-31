@@ -103,7 +103,7 @@ fun ScanModeSheet(
 
             // Riquadro ad altezza fissa: le tre descrizioni occupano una o due
             // righe, e senza uno spazio riservato il pannello cambiava altezza
-            // passando da una modalita all'altra.
+            // passando da una modalità all'altra.
             Box(
                 modifier = Modifier
                     .padding(top = 14.dp)
