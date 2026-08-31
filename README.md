@@ -18,20 +18,22 @@ with on-device OCR, and keeps everything encrypted on the phone.
 - AES-256-GCM encrypted archive, organised into folders.
 - Full-text search across scans.
 - PDF export and sharing.
-- Light, dark or system theme.
+- Interface in Italian or English, or following the phone's language.
+- Light, dark or system theme, with four accent colours: rust, blue, plum, green.
+- Two card styles: rounded cards on a filled background, or underlined rows with
+  no container.
 
 ## Requirements
 
 - Android 7.0 (API 24) or later.
 - Google Play Services: the capture module comes from there.
-- A physical device. The scanner does not work on emulators without Play Store.
 
 ## Layout
 
 ```
 DocScan/
 ├── README.md
-├── docs/                               screenshots used above
+├── docs/                               screenshots and icon drafts
 ├── build.gradle.kts                    plugin versions
 ├── settings.gradle.kts
 ├── gradle.properties
@@ -52,7 +54,7 @@ DocScan/
         │   │   │   ├── ScanMode.kt             modes and ISO 7810 card sizes
         │   │   │   ├── A4Composer.kt           both sides on A4 at true scale
         │   │   │   ├── PdfBuilder.kt           multi-page PDF
-        │   │   │   ├── AppSettings.kt          theme and default folder
+        │   │   │   ├── AppSettings.kt          theme, accent, card style, language
         │   │   │   └── Images.kt               downsampled image decoding
         │   │   ├── ocr/
         │   │   │   ├── Ocr.kt                  ML Kit, on-device recognition
@@ -60,7 +62,11 @@ DocScan/
         │   │   │   └── FieldExtractor.kt       labelled fields, checks, PAN masking
         │   │   └── ui/
         │   │       ├── DocScanViewModel.kt     app state and operations
+        │   │       ├── WithLanguage.kt         applies the chosen language
+        │   │       ├── Labels.kt               field and folder key translation
         │   │       ├── BottomSheet.kt          shared bottom sheet
+        │   │       ├── AnimatedDialog.kt       shared dialog
+        │   │       ├── OverlayPhase.kt         enter and exit of overlays
         │   │       ├── Components.kt           card thumbnails, filter chips
         │   │       ├── DocumentActionsSheet.kt long-press menu, name dialog
         │   │       ├── FolderPickerSheet.kt    folder picker
@@ -70,53 +76,57 @@ DocScan/
         │   │       ├── review/A4Preview.kt        A4 sheet preview
         │   │       ├── detail/DetailScreen.kt     open document
         │   │       ├── scan/ScanModeSheet.kt      mode selection
-        │   │       ├── settings/SettingsSheet.kt  settings
-        │   │       └── theme/                     Color.kt, Theme.kt
+        │   │       ├── settings/SettingsScreen.kt settings
+        │   │       └── theme/
+        │   │           ├── Color.kt               palettes and accent tones
+        │   │           ├── Scale.kt               spacing, radii, type sizes
+        │   │           └── Theme.kt               theme assembly
         │   └── res/
-        │       ├── values/              strings.xml, colors.xml, themes.xml
+        │       ├── values/              strings.xml (it), colors.xml, themes.xml
+        │       ├── values-en/           strings.xml (en)
         │       ├── values-night/        themes.xml
-        │       ├── drawable/            ic_launcher_foreground.xml
+        │       ├── drawable/            launcher vector icons
         │       ├── mipmap-anydpi-v26/   adaptive icons, API 26+
         │       ├── mipmap-*dpi/         PNG icons for API 24-25
         │       └── xml/                 file_paths.xml, data_extraction_rules.xml
         └── test/java/it/example/docscan/
             ├── data/A4ComposerTest.kt      sheet geometry
             ├── data/FolderNameTest.kt      folder name uniqueness
+            ├── data/FolderNameKeyTest.kt   migration of default folder names
             └── ocr/ParserTest.kt           tax code, MRZ, IBAN, PAN
 ```
 
-The UI is entirely Jetpack Compose. There are no XML layouts.
+## Build and run
+
+Toolchain: JDK 17, Gradle 8.13 (via the wrapper), Android Gradle Plugin 8.13.2,
+Kotlin 2.0.20, compileSdk 35.
+
+**Android Studio** (Ladybug or later):
+
+1. `File > Open` and pick the project folder, not a file inside it.
+2. Wait for the Gradle sync. If it fails, `File > Sync Project with Gradle Files`
+   after checking that the embedded JDK is 17 in
+   `Settings > Build Tools > Gradle`.
+3. Plug in a device with USB debugging on, select it in the toolbar and press
+   Run. The scanner needs Play Store, so an emulator without Google APIs will
+   install the app but fail at capture.
+4. Unit tests: right-click `app/src/test` and choose `Run Tests`. No device
+   needed, they run on the JVM.
+
+**Command line:**
+
+```
+./gradlew assembleDebug     # debug APK in app/build/outputs/apk/debug/
+./gradlew installDebug      # build and install on the connected device
+./gradlew test              # unit tests
+```
+
+## Notes
+
+The UI is built with Jetpack Compose, so the screens are Kotlin functions that
+declare what to draw. There is not a single XML layout in the project.
+
+The underlined card style drops the container on purpose, so the scanned page
+stays the only solid shape on screen.
 
 Source comments are in Italian.
-
-## Design notes
-
-**No INTERNET permission.** The manifest does not declare one, so the app
-process simply cannot send anything anywhere, and you can check that by opening
-the manifest. The OCR model ships inside the APK and works in airplane mode.
-
-Capture goes through ML Kit's Document Scanner, which runs inside the Google Play
-Services process. Google states the images stay on the device, but it does
-receive API usage metrics — anyone shipping this app has to tell their users so.
-
-**Encryption.** Every file in the archive is AES-256-GCM encrypted with a
-non-exportable key held in the Android Keystore. Previews are decrypted straight
-into memory, so no plaintext file ever touches disk, except the temporary copy
-made for sharing or exporting, which is wiped when the app comes back to the
-foreground. There is no biometric lock on top of that yet, so anyone holding the
-unlocked phone can open the archive.
-
-**True scale.** A4 composition starts in millimetres and writes the PDF in
-PostScript points (1 mm = 72/25.4 pt). Print the sheet and an ID-1 card measures
-85.6 × 54 mm on paper. An image has no physical unit, so its scale is lost the
-first time it goes through a printer.
-
-**Field extraction.** OCR returns the lines of the page rather than one flat
-string: on an invoice the label and its value sit on the same line, and that is
-the most reliable signal there is. Tax codes, MRZ lines, IBANs and VAT numbers
-are validated against their own check digits. If a page is neither an identity
-document nor a commercial one, nothing is extracted at all.
-
-**Payment data.** Every run of 13 to 19 digits goes through a Luhn check. If it
-passes, it is a card number: it never becomes a field, and it is masked in the
-stored text with only the last four digits left.
