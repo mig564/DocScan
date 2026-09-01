@@ -14,30 +14,20 @@ import org.junit.Test
  */
 class FolderNameKeyTest {
 
-    private val defaultKeys = mapOf(
-        "documenti" to "folder_documents",
-        "carte" to "folder_cards",
-        "fatture" to "folder_invoices",
-        "da-ordinare" to "unsorted",
-    )
-
-    private val originalNames = mapOf(
-        "folder_documents" to "Documenti e moduli",
-        "folder_cards" to "Carte",
-        "folder_invoices" to "Fatture",
-        "unsorted" to "Da ordinare",
-    )
-
-    /** Stessa logica di DocumentRepository.folders(). */
-    private fun migrate(stored: List<Folder>): List<Folder> = stored.map { folder ->
-        val key = defaultKeys[folder.id]
-        when {
-            folder.nameKey != null || key == null -> folder
-            folder.name.isBlank() || folder.name == originalNames[key] ->
-                folder.copy(name = "", nameKey = key)
-            else -> folder
+    /** Al posto delle risorse: i nomi italiani con cui l'archivio era nato. */
+    private val originalName: (String) -> String = { key ->
+        when (key) {
+            "folder_documents" -> "Documenti e moduli"
+            "folder_cards" -> "Carte"
+            "folder_receipts" -> "Ricevute"
+            "folder_invoices" -> "Fatture"
+            "folder_contracts" -> "Contratti"
+            else -> "Da ordinare"
         }
     }
+
+    private fun migrate(stored: List<Folder>) =
+        ArchiveRules.migrateFolders(stored, originalName)
 
     @Test
     fun `una cartella predefinita mai rinominata prende la chiave`() {
@@ -61,7 +51,31 @@ class FolderNameKeyTest {
 
     @Test
     fun `la migrazione si puo ripetere senza effetti`() {
-        val once = migrate(listOf(Folder("da-ordinare", "Da ordinare", 0)))
+        val once = migrate(listOf(Folder(DocumentRepository.FOLDER_UNSORTED, "Da ordinare", 0)))
         assertEquals(once, migrate(once))
+    }
+
+    @Test
+    fun `ogni cartella predefinita e coperta dalla migrazione`() {
+        // Regressione: le predefinite e le chiavi della migrazione erano due
+        // elenchi scritti a mano, e il secondo era rimasto indietro di due
+        // cartelle. Quelle due sarebbero restate in italiano per sempre, senza
+        // che niente lo segnalasse. Ora le chiavi si ricavano dalle
+        // predefinite; questo test è la rete che tiene ferma quella scelta.
+        val defaults = ArchiveRules.defaultFolders()
+
+        for (folder in defaults) {
+            assertEquals(
+                "la cartella ${folder.id} non è nella mappa della migrazione",
+                folder.nameKey,
+                ArchiveRules.defaultKeys[folder.id],
+            )
+        }
+
+        // Un archivio vecchio: stessi id, nomi italiani, nessuna chiave.
+        val vecchio = defaults.map {
+            Folder(it.id, originalName(it.nameKey!!), it.order)
+        }
+        assertEquals(defaults, migrate(vecchio))
     }
 }

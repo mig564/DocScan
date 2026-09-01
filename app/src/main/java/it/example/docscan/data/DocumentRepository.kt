@@ -34,29 +34,9 @@ class DocumentRepository(private val context: Context) {
         private const val FOLDERS_FILE = "folders.enc"
         const val FOLDER_UNSORTED = "da-ordinare"
         private const val SHARE_DIR = "condivisi"
-
-        /** Il "(2)" finale aggiunto per distinguere due nomi uguali. */
-        private val COPY_SUFFIX = Regex("""\s*\(\d+\)$""")
     }
 
     // ------------------------------------------------------------- Cartelle
-
-    /** Cartelle create al primo avvio. */
-    private fun defaultFolders() = listOf(
-        Folder("documenti", "", 0, "folder_documents"),
-        Folder("carte", "", 1, "folder_cards"),
-        Folder("ricevute", "", 2, "folder_receipts"),
-        Folder("fatture", "", 3, "folder_invoices"),
-        Folder("contratti", "", 4, "folder_contracts"),
-        Folder(FOLDER_UNSORTED, "", 5, "unsorted"),
-    )
-
-    /** Chiave attesa per ogni cartella predefinita, usata dalla migrazione. */
-    private val defaultKeys = mapOf(
-        "documenti" to "folder_documents", "carte" to "folder_cards",
-        "ricevute" to "folder_receipts", "fatture" to "folder_invoices",
-        "contratti" to "folder_contracts", FOLDER_UNSORTED to "unsorted",
-    )
 
     /**
      * Elenco delle cartelle, in ordine. Al primo avvio crea quelle predefinite.
@@ -66,25 +46,15 @@ class DocumentRepository(private val context: Context) {
      */
     suspend fun folders(): List<Folder> = withContext(Dispatchers.IO) {
         if (!store.exists(FOLDERS_FILE)) {
-            val defaults = defaultFolders()
+            val defaults = ArchiveRules.defaultFolders()
             saveFolders(defaults)
             return@withContext defaults
         }
         val stored = runCatching {
             json.decodeFromString<List<Folder>>(String(store.read(FOLDERS_FILE)))
-        }.getOrElse { defaultFolders() }
+        }.getOrElse { ArchiveRules.defaultFolders() }
 
-        // Migrazione: gli archivi creati prima della traduzione hanno il nome
-        // scritto in italiano e nessuna chiave. Se il nome coincide ancora con
-        // quello predefinito la cartella non è mai stata rinominata, quindi
-        // riceve la chiave; se è stato cambiato resta com'è.
-        val migrated = stored.map { folder ->
-            val key = defaultKeys[folder.id]
-            if (folder.nameKey != null || key == null) folder
-            else if (folder.name.isBlank() || folder.name == context.getString(nameRes(key)))
-                folder.copy(name = "", nameKey = key)
-            else folder
-        }
+        val migrated = ArchiveRules.migrateFolders(stored) { context.getString(nameRes(it)) }
         if (migrated != stored) saveFolders(migrated)
         migrated.sortedBy { it.order }
     }
@@ -100,12 +70,8 @@ class DocumentRepository(private val context: Context) {
      * e "fatture " sono la stessa cartella per un utente, e permetterle entrambe
      * significa creare due posti indistinguibili dove cercare la stessa cosa.
      */
-    suspend fun folderNameTaken(name: String, exceptId: String? = null): Boolean {
-        val target = name.trim()
-        return folders().any {
-            it.id != exceptId && displayName(it).trim().equals(target, ignoreCase = true)
-        }
-    }
+    suspend fun folderNameTaken(name: String, exceptId: String? = null): Boolean =
+        ArchiveRules.folderNameTaken(name, folders(), exceptId, ::displayName)
 
     /** Nome da mostrare: tradotto se predefinita, testuale se creata dall'utente. */
     fun displayName(folder: Folder): String =
@@ -248,18 +214,7 @@ class DocumentRepository(private val context: Context) {
     suspend fun uniqueTitle(title: String, folderId: String, exceptId: String? = null): String =
         withContext(Dispatchers.IO) {
             val base = title.trim().ifBlank { context.getString(R.string.scan_default_name) }
-            val taken = records()
-                .filter { it.folderId == folderId && it.id != exceptId }
-                .map { it.title.trim().lowercase() }
-                .toSet()
-            if (base.lowercase() !in taken) return@withContext base
-
-            // Se il nome finisce già per "(3)" si riparte dalla radice, così da
-            // "Bolletta (3)" nasce "Bolletta (4)" e non "Bolletta (3) (2)".
-            val root = base.replace(COPY_SUFFIX, "").trim().ifBlank { base }
-            var n = 2
-            while ("$root ($n)".lowercase() in taken) n++
-            "$root ($n)"
+            ArchiveRules.uniqueTitle(base, ArchiveRules.takenTitles(records(), folderId, exceptId))
         }
 
     /**
@@ -380,15 +335,8 @@ class DocumentRepository(private val context: Context) {
         }
 
     /** Ricerca full-text sul testo OCR conservato, più titolo e campi. */
-    fun search(records: List<DocumentRecord>, query: String): List<DocumentRecord> {
-        val q = query.trim().lowercase()
-        if (q.isEmpty()) return records
-        return records.filter { r ->
-            r.title.lowercase().contains(q) ||
-                    r.searchText.lowercase().contains(q) ||
-                    r.fields.any { it.value.lowercase().contains(q) || it.label.lowercase().contains(q) }
-        }
-    }
+    fun search(records: List<DocumentRecord>, query: String): List<DocumentRecord> =
+        ArchiveRules.search(records, query)
 
     /**
      * Scrive il PDF decifrato su una Uri scelta dall'utente via SAF: la
