@@ -50,6 +50,7 @@ DocScan/
         │   │   ├── data/
         │   │   │   ├── SecureStore.kt          AES-GCM on a Keystore key
         │   │   │   ├── DocumentRepository.kt   archive, folders, export
+        │   │   │   ├── ArchiveRules.kt          titles, search, folder rules
         │   │   │   ├── Model.kt                documents, folders, fields
         │   │   │   ├── ScanMode.kt             modes and ISO 7810 card sizes
         │   │   │   ├── A4Composer.kt           both sides on A4 at true scale
@@ -90,10 +91,14 @@ DocScan/
         │       ├── mipmap-*dpi/         PNG icons for API 24-25
         │       └── xml/                 file_paths.xml, data_extraction_rules.xml
         └── test/java/it/example/docscan/
-            ├── data/A4ComposerTest.kt      sheet geometry
-            ├── data/FolderNameTest.kt      folder name uniqueness
-            ├── data/FolderNameKeyTest.kt   migration of default folder names
-            └── ocr/ParserTest.kt           tax code, MRZ, IBAN, PAN
+            ├── data/A4ComposerTest.kt        sheet geometry
+            ├── data/TitleNumberingTest.kt    duplicate title numbering
+            ├── data/SearchTest.kt            full-text search
+            ├── data/FolderNameTest.kt        folder name uniqueness
+            ├── data/FolderNameKeyTest.kt     migration of default folder names
+            ├── data/DocumentRecordTest.kt    review badge, pages vs sheets
+            ├── data/ImagesTest.kt            downsampling factor
+            └── ocr/ParserTest.kt             tax code, MRZ, IBAN, PAN
 ```
 
 ## Build and run
@@ -110,16 +115,66 @@ Kotlin 2.0.20, compileSdk 35.
 3. Plug in a device with USB debugging on, select it in the toolbar and press
    Run. The scanner needs Play Store, so an emulator without Google APIs will
    install the app but fail at capture.
-4. Unit tests: right-click `app/src/test` and choose `Run Tests`. No device
-   needed, they run on the JVM.
 
 **Command line:**
 
 ```
 ./gradlew assembleDebug     # debug APK in app/build/outputs/apk/debug/
 ./gradlew installDebug      # build and install on the connected device
-./gradlew test              # unit tests
 ```
+
+Unit tests have their own section below.
+
+## Tests
+
+What goes in here: rules that are pure logic on values, where a mistake is
+silent. A wrong checksum, a duplicate title, a search that quietly returns
+nothing — none of these crash, so nobody notices until the archive is already
+wrong. Those get a test.
+
+What stays out: anything that needs a screen, a bitmap or a real file.
+`A4Composer.build`, `PdfBuilder`, `SecureStore` and the Compose screens are all
+covered by opening the app, and testing them would cost an emulator run for
+each change. There is no `androidTest` folder on purpose.
+
+The tests live in `app/src/test` and run on the JVM, so the whole suite finishes
+in seconds without a device:
+
+```
+./gradlew test              # all of them
+./gradlew test --tests '*ParserTest'
+```
+
+In Android Studio, right-click `app/src/test` and choose `Run Tests`, or use the
+green arrow next to a class or a single method.
+
+Each test follows the same three steps — build the input, call the one thing
+under test, state what is expected — and the method name says the expected
+behaviour in words, so a red test reads as a sentence about what broke.
+
+One rule worth keeping: **a test calls the real function, it never re-implements
+it.** Two of these tests used to hold their own copy of the repository logic,
+and one copy had already fallen behind by two folders while still passing. That
+is why the pure rules now live in `ArchiveRules.kt`, separate from the
+repository that reads and writes files: the repository keeps the disk and the
+resources, the rules can be called directly from a test.
+
+What is covered today:
+
+| Test | Guards against |
+|---|---|
+| `ParserTest` | tax code, MRZ and IBAN checksums; invented fields on plain prose; card numbers reaching storage |
+| `A4ComposerTest` | cards printed off-sheet or off true scale |
+| `TitleNumberingTest` | two identical rows in the same folder |
+| `SearchTest` | documents that exist but cannot be found |
+| `FolderNameTest` | two folders that look like the same folder |
+| `FolderNameKeyTest` | default folders stuck in Italian after a language change |
+| `DocumentRecordTest` | wrong review badge; a two-sided card counted as two pages |
+| `ImagesTest` | out-of-memory on long documents; scans too blurry to read |
+
+Still untested and worth doing next: the sort in `folderDocuments`, which decides
+the order of every list the user scrolls. It needs the sorting to move out of the
+ViewModel first, the same way the archive rules did.
 
 ## Notes
 
